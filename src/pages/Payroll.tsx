@@ -35,7 +35,7 @@ export default function Payroll() {
   const logRef = useRef<HTMLPreElement>(null)
 
   const MAC_URL = import.meta.env.VITE_MAC_API_URL || ''
-  const headers = { 'x-payroll-pin': PIN }
+  // headers removed
 
   const checkStatus = async () => {
     try {
