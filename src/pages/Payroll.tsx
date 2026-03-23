@@ -33,11 +33,12 @@ export default function Payroll() {
   const [macOnline, setMacOnline] = useState<boolean | null>(null)
   const logRef = useRef<HTMLPreElement>(null)
 
+  const MAC_URL = import.meta.env.VITE_MAC_API_URL || ''
   const headers = { 'x-payroll-pin': PIN }
 
   const checkStatus = async () => {
     try {
-      const res = await fetch('/api/payroll/status', { headers })
+      const res = await fetch(`${MAC_URL}/api/payroll/status`)
       if (!res.ok) throw new Error()
       const data = await res.json()
       setStatus(data)
@@ -66,12 +67,12 @@ export default function Payroll() {
   }
 
   const runPayroll = async () => {
-    await fetch('/api/payroll/run', { method: 'POST', headers })
+    await fetch(`${MAC_URL}/api/payroll/run`, { method: 'POST' })
     setTimeout(checkStatus, 500)
   }
 
   const sendTexts = async () => {
-    await fetch('/api/payroll/send-texts', { method: 'POST', headers })
+    await fetch(`${MAC_URL}/api/payroll/send-texts`, { method: 'POST' })
     setTimeout(checkStatus, 500)
   }
 
