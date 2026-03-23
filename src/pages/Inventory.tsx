@@ -1,4 +1,49 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+// ─────────────────────────────────────────────
+// SUPABASE CLIENT
+// ─────────────────────────────────────────────
+const supabase = createClient(
+  'https://tuagjockdooglxarkbpj.supabase.co',
+  'sb_publishable_qTG1M-TN74zy_xi3LV91VA_IhNmT1k3'
+)
+
+// DB row → Product
+const fromRow = (r: Record<string, unknown>): Product => ({
+  id:        r.id as string,
+  name:      r.name as string,
+  barcodes:  (r.barcodes as string[]) || [],
+  par:       r.par as number,
+  onHand:    r.on_hand as number,
+  category:  r.category as string,
+  abdCost:   r.abd_cost as number,
+  active:    r.active as boolean,
+})
+
+// Product → DB row
+const toRow = (p: Product) => ({
+  id:       p.id,
+  name:     p.name,
+  barcodes: p.barcodes,
+  par:      p.par,
+  on_hand:  p.onHand,
+  category: p.category,
+  abd_cost: p.abdCost,
+  active:   p.active,
+})
+
+// DB row → Movement
+const fromMovRow = (r: Record<string, unknown>): Movement => ({
+  id:           r.id as string,
+  timestamp:    r.timestamp as number,
+  barcode:      r.barcode as string,
+  productId:    r.product_id as string,
+  productName:  r.product_name as string,
+  direction:    r.direction as 'OUT' | 'IN',
+  qty:          r.qty as number,
+  onHandAfter:  r.on_hand_after as number,
+})
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -35,9 +80,6 @@ type Tab = 'scan' | 'products' | 'movements' | 'settings'
 // ─────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────
-
-const LS_PRODUCTS  = 'cc_inv_products_v2'
-const LS_MOVEMENTS = 'cc_inv_movements_v2'
 
 // Accept only 6–14 digit numeric codes (UPC-E, UPC-A, EAN-8, EAN-13, ITF-14)
 // Rejects QR codes, URLs, alphanumeric codes
@@ -199,19 +241,10 @@ const fmt = (ts: number) => new Date(ts).toLocaleString('en-US', {
 // ─────────────────────────────────────────────
 
 export default function Inventory() {
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const s = localStorage.getItem(LS_PRODUCTS)
-      return s ? JSON.parse(s) : DEFAULT_PRODUCTS
-    } catch { return DEFAULT_PRODUCTS }
-  })
-
-  const [movements, setMovements] = useState<Movement[]>(() => {
-    try {
-      const s = localStorage.getItem(LS_MOVEMENTS)
-      return s ? JSON.parse(s) : []
-    } catch { return [] }
-  })
+  const [products, setProducts]   = useState<Product[]>([])
+  const [movements, setMovements] = useState<Movement[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [syncing, setSyncing]     = useState(false)
 
   const [tab, setTab]               = useState<Tab>('scan')
   const [scanStatus, setScanStatus] = useState<ScanStatus>('ready')
@@ -234,9 +267,45 @@ export default function Inventory() {
   const scanRef     = useRef<HTMLInputElement>(null)
   const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Persist ──
-  useEffect(() => { localStorage.setItem(LS_PRODUCTS,  JSON.stringify(products))  }, [products])
-  useEffect(() => { localStorage.setItem(LS_MOVEMENTS, JSON.stringify(movements)) }, [movements])
+  // ── Initial load from Supabase ──
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      const [{ data: pRows }, { data: mRows }] = await Promise.all([
+        supabase.from('products').select('*').order('name'),
+        supabase.from('movements').select('*').order('timestamp', { ascending: false }),
+      ])
+
+      if (pRows && pRows.length > 0) {
+        setProducts(pRows.map(fromRow))
+      } else {
+        // First time: seed default products
+        const rows = DEFAULT_PRODUCTS.map(toRow)
+        await supabase.from('products').insert(rows)
+        setProducts(DEFAULT_PRODUCTS)
+      }
+
+      if (mRows) setMovements(mRows.map(fromMovRow))
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  // ── Real-time subscriptions (cross-device sync) ──
+  useEffect(() => {
+    const channel = supabase
+      .channel('inventory-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+        const { data } = await supabase.from('products').select('*').order('name')
+        if (data) setProducts(data.map(fromRow))
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'movements' }, async () => {
+        const { data } = await supabase.from('movements').select('*').order('timestamp', { ascending: false })
+        if (data) setMovements(data.map(fromMovRow))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   // ── Auto-focus scan box ──
   useEffect(() => {
@@ -249,7 +318,7 @@ export default function Inventory() {
   }, [])
 
   // ── Core scan logic ──
-  const processScan = useCallback((raw: string) => {
+  const processScan = useCallback(async (raw: string) => {
     const code = raw.trim()
     setScanInput('')
     if (!code) return
@@ -281,10 +350,14 @@ export default function Inventory() {
     }
 
     const newOnHand = product.onHand - 1
-    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, onHand: newOnHand } : p))
+    setSyncing(true)
 
+    // Update product on_hand in Supabase
+    await supabase.from('products').update({ on_hand: newOnHand }).eq('id', product.id)
+
+    // Insert movement in Supabase
     const mv: Movement = {
-      id: `${Date.now()}-${Math.random()}`,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       timestamp: Date.now(),
       barcode: code,
       productId: product.id,
@@ -293,7 +366,21 @@ export default function Inventory() {
       qty: 1,
       onHandAfter: newOnHand,
     }
+    await supabase.from('movements').insert({
+      id: mv.id,
+      timestamp: mv.timestamp,
+      barcode: mv.barcode,
+      product_id: mv.productId,
+      product_name: mv.productName,
+      direction: mv.direction,
+      qty: mv.qty,
+      on_hand_after: mv.onHandAfter,
+    })
+
+    // Optimistic local update (real-time will confirm)
+    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, onHand: newOnHand } : p))
     setMovements(prev => [mv, ...prev])
+    setSyncing(false)
 
     setScanStatus('scanned')
     setLastMsg(`${product.name} — now ${newOnHand} of ${product.par} PAR`)
@@ -333,16 +420,29 @@ export default function Inventory() {
   }
 
   // ── Submit order: clear movements, reset on-hand to PAR ──
-  const submitOrder = () => {
+  const submitOrder = async () => {
+    setSyncing(true)
+    // Reset all on_hand to par in Supabase
+    for (const p of products) {
+      await supabase.from('products').update({ on_hand: p.par }).eq('id', p.id)
+    }
+    // Clear all movements
+    await supabase.from('movements').delete().neq('id', 'x')
     setProducts(prev => prev.map(p => ({ ...p, onHand: p.par })))
     setMovements([])
     setConfirmClear(false)
+    setSyncing(false)
   }
 
   // ── Reset on-hand to PAR without clearing movements ──
-  const resetToPar = () => {
+  const resetToPar = async () => {
+    setSyncing(true)
+    for (const p of products) {
+      await supabase.from('products').update({ on_hand: p.par }).eq('id', p.id)
+    }
     setProducts(prev => prev.map(p => ({ ...p, onHand: p.par })))
     setConfirmReset(false)
+    setSyncing(false)
   }
 
   // ── Editing helpers ──
@@ -351,9 +451,13 @@ export default function Inventory() {
     setEditForm({ ...p })
     setNewBarcodeInput('')
   }
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingId) return
-    setProducts(prev => prev.map(p => p.id === editingId ? { ...p, ...editForm } : p))
+    const updated = products.find(p => p.id === editingId)
+    if (!updated) return
+    const merged = { ...updated, ...editForm }
+    await supabase.from('products').update(toRow(merged)).eq('id', editingId)
+    setProducts(prev => prev.map(p => p.id === editingId ? merged : p))
     setEditingId(null)
   }
   const removeBarcode = (bc: string) => {
@@ -369,7 +473,7 @@ export default function Inventory() {
   }
 
   // ── Add new product ──
-  const saveNewProduct = () => {
+  const saveNewProduct = async () => {
     if (!newProduct.name?.trim()) return
     const p: Product = {
       id: `p${Date.now()}`,
@@ -1075,12 +1179,14 @@ export default function Inventory() {
         <div style={S.card}>
           <div style={{ fontSize:'11px', color:'#555', letterSpacing:'0.1em', marginBottom:'8px' }}>DATA STORAGE</div>
           <p style={{ fontSize:'12px', color:'#888', marginBottom:'12px', lineHeight:1.6 }}>
-            All data is saved to browser localStorage on this device. Products and movements persist across sessions. To move data to a new device, use Export CSV.
+            All data is stored in Supabase and syncs in real time across all devices. Any scan on the Surface Pro, your phone, or your Mac will update everywhere instantly.
           </p>
-          <button style={S.btn('danger')} onClick={() => {
+          <button style={S.btn('danger')} onClick={async () => {
             if (confirm('This will delete ALL products and movements and restore defaults. Are you sure?')) {
-              localStorage.removeItem(LS_PRODUCTS)
-              localStorage.removeItem(LS_MOVEMENTS)
+              await supabase.from('movements').delete().neq('id', 'x')
+              await supabase.from('products').delete().neq('id', 'x')
+              const rows = DEFAULT_PRODUCTS.map(toRow)
+              await supabase.from('products').insert(rows)
               setProducts(DEFAULT_PRODUCTS)
               setMovements([])
             }
@@ -1095,14 +1201,23 @@ export default function Inventory() {
   // ──────────────────────────────────────────
   // RENDER
   // ──────────────────────────────────────────
+  if (loading) return (
+    <div style={{ ...S.page, display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh' }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:'13px', color:'#aa3bff', letterSpacing:'0.15em', marginBottom:'8px' }}>COPPER CUP — INVENTORY</div>
+        <div style={{ fontSize:'11px', color:'#444', letterSpacing:'0.1em' }}>CONNECTING TO DATABASE...</div>
+      </div>
+    </div>
+  )
+
   return (
     <div style={S.page}>
       {/* Header */}
       <div style={S.header}>
         <div>
           <h1 style={S.title}>Copper Cup — Inventory System</h1>
-          <div style={{ fontSize:'11px', color:'#444', marginTop:'3px', letterSpacing:'0.05em' }}>
-            Scanner-driven bottle tracking · Alias barcodes · QR filter active
+          <div style={{ fontSize:'11px', color: syncing ? '#aa3bff' : '#444', marginTop:'3px', letterSpacing:'0.05em' }}>
+            {syncing ? '⟳ Syncing...' : 'Scanner-driven bottle tracking · Live sync · QR filter active'}
           </div>
         </div>
         <div style={S.stats}>
