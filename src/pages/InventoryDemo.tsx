@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // THEME — Deep blue / slate
 // ─────────────────────────────────────────────
 const ACCENT  = '#3b82f6'   // blue-500
-const ACCENT2 = '#1d4ed8'   // blue-700
 const BG      = '#0a0f1a'   // deep navy
 const SURFACE = '#0f1623'   // card bg
 const BORDER  = '#1e2d45'   // border
@@ -130,7 +129,7 @@ const S = {
   header: { background:SURFACE, borderBottom:`1px solid ${BORDER}`, padding:'14px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, position:'sticky' as const, top:0, zIndex:10 },
   title: { fontSize:12, letterSpacing:'0.18em', fontWeight:700, color:ACCENT, textTransform:'uppercase' as const, margin:0 },
   tabs: { background:SURFACE, borderBottom:`1px solid ${BORDER}`, display:'flex', padding:'0 24px' } as React.CSSProperties,
-  tab: (active: boolean) => ({ padding:'11px 18px', fontSize:'10px', letterSpacing:'0.12em', fontWeight: active ? 700 : 400, color: active ? ACCENT : MUTED, borderBottom: active ? `2px solid ${ACCENT}` : '2px solid transparent', cursor:'pointer', background:'none', border:'none', borderBottom: active ? `2px solid ${ACCENT}` : '2px solid transparent', textTransform:'uppercase' as const } as React.CSSProperties),
+  tab: (active: boolean) => ({ padding:'11px 18px', fontSize:'10px', letterSpacing:'0.12em', fontWeight: active ? 700 : 400, color: active ? ACCENT : MUTED, cursor:'pointer', background:'none', border:'none', borderBottom: active ? `2px solid ${ACCENT}` : '2px solid transparent', textTransform:'uppercase' as const } as React.CSSProperties),
   content: { padding:'20px 24px', maxWidth:1100 } as React.CSSProperties,
   card: { background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:8, padding:'16px', marginBottom:12 } as React.CSSProperties,
   statusBox: (color: string) => ({ background:`${color}12`, border:`2px solid ${color}50`, borderRadius:8, padding:'18px 24px', display:'flex', alignItems:'center', gap:14, marginBottom:18 } as React.CSSProperties),
