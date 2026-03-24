@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
 const PIN = import.meta.env.VITE_PAYROLL_PIN || '1234'
-
 const COPPER = '#bc6c25'
 const DARK   = '#080808'
 
@@ -12,8 +11,7 @@ type JobStatus = {
 }
 
 type Status = {
-  payroll: JobStatus
-  texts: JobStatus
+  mule: JobStatus
   log: string
 }
 
@@ -25,11 +23,11 @@ function fmt(iso: string | null) {
   })
 }
 
-export default function Payroll() {
-  const [pin, setPin]         = useState('')
-  const [authed, setAuthed]   = useState(false)
+export default function MuleBonus() {
+  const [pin, setPin]           = useState('')
+  const [authed, setAuthed]     = useState(false)
   const [pinError, setPinError] = useState(false)
-  const [status, setStatus]   = useState<Status | null>(null)
+  const [status, setStatus]     = useState<Status | null>(null)
   const [macOnline, setMacOnline] = useState<boolean | null>(null)
   const logRef = useRef<HTMLPreElement>(null)
 
@@ -55,9 +53,7 @@ export default function Payroll() {
   }, [authed])
 
   useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight
-    }
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
   }, [status?.log])
 
   const handlePin = () => {
@@ -65,13 +61,8 @@ export default function Payroll() {
     else { setPinError(true); setPin('') }
   }
 
-  const runPayroll = async () => {
-    await fetch(`${MAC_URL}/api/payroll/run`, { method: 'POST' })
-    setTimeout(checkStatus, 500)
-  }
-
-  const sendTexts = async () => {
-    await fetch(`${MAC_URL}/api/payroll/send-texts`, { method: 'POST' })
+  const runMuleBonus = async () => {
+    await fetch(`${MAC_URL}/api/payroll/run-mule-bonus`, { method: 'POST' })
     setTimeout(checkStatus, 500)
   }
 
@@ -93,7 +84,7 @@ export default function Payroll() {
             style={{ width: 80, marginBottom: 8 }}
           />
           <div style={{ color: '#888', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>
-            Payroll Access
+            Mule Bonus Access
           </div>
           <input
             type="password"
@@ -108,9 +99,7 @@ export default function Payroll() {
               outline: 'none', boxSizing: 'border-box'
             }}
           />
-          {pinError && (
-            <div style={{ color: '#c0392b', fontSize: 13 }}>Incorrect PIN</div>
-          )}
+          {pinError && <div style={{ color: '#c0392b', fontSize: 13 }}>Incorrect PIN</div>}
           <button
             onClick={handlePin}
             style={{
@@ -127,8 +116,7 @@ export default function Payroll() {
     )
   }
 
-  const payrollRunning = status?.payroll.running
-  const textsRunning   = status?.texts.running
+  const muleRunning = status?.mule.running
 
   return (
     <div style={{
@@ -145,7 +133,7 @@ export default function Payroll() {
         />
         <div>
           <div style={{ fontSize: 22, fontWeight: 700, color: COPPER }}>
-            Payroll Dashboard
+            Mule Bonus %
           </div>
           <div style={{ fontSize: 12, color: '#555', letterSpacing: 2, textTransform: 'uppercase' }}>
             The Copper Cup
@@ -168,97 +156,58 @@ export default function Payroll() {
           borderRadius: 12, padding: '16px 20px', marginBottom: 24,
           color: '#c0392b', fontSize: 14
         }}>
-          ⚠️ Mac Pro is offline or the payroll API isn't running. Make sure the Mac Pro is on and <code>payroll_api.py</code> is running.
+          ⚠️ Mac Pro is offline or the API isn't running. Make sure <code>payroll_api.py</code> is running.
         </div>
       )}
 
-      {/* Action buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+      {/* Run button */}
+      <div style={{ marginBottom: 32 }}>
         <button
-          onClick={runPayroll}
-          disabled={payrollRunning || textsRunning || !macOnline}
+          onClick={runMuleBonus}
+          disabled={muleRunning || !macOnline}
           style={{
-            padding: '28px 20px', borderRadius: 14,
-            background: payrollRunning ? '#1a1a1a' : `${COPPER}22`,
-            border: `2px solid ${payrollRunning ? COPPER : `${COPPER}55`}`,
-            color: payrollRunning ? COPPER : '#fff',
-            cursor: payrollRunning || !macOnline ? 'not-allowed' : 'pointer',
-            display: 'flex', flexDirection: 'column', gap: 8,
+            width: '100%', padding: '32px 24px', borderRadius: 14,
+            background: muleRunning ? '#1a1a1a' : '#1a1a2a',
+            border: `2px solid ${muleRunning ? '#9b59b6' : '#9b59b655'}`,
+            color: muleRunning ? '#9b59b6' : '#fff',
+            cursor: muleRunning || !macOnline ? 'not-allowed' : 'pointer',
+            display: 'flex', flexDirection: 'column', gap: 10,
             alignItems: 'flex-start', transition: 'all 0.2s',
             opacity: !macOnline ? 0.4 : 1
           }}
         >
-          <span style={{ fontSize: 28 }}>{payrollRunning ? '⏳' : '📊'}</span>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>
-            {payrollRunning ? 'Running...' : 'Run Payroll'}
+          <span style={{ fontSize: 32 }}>{muleRunning ? '⏳' : '🍺'}</span>
+          <span style={{ fontSize: 20, fontWeight: 700 }}>
+            {muleRunning ? 'Running...' : 'Run Mule Bonus'}
           </span>
-          <span style={{ fontSize: 12, color: '#888', textAlign: 'left' }}>
-            {payrollRunning ? 'Scraping Blogic — this takes a few minutes' : 'Scrape Blogic & fill spreadsheet'}
+          <span style={{ fontSize: 13, color: '#888', textAlign: 'left' }}>
+            {muleRunning
+              ? 'Scraping sales data from Blogic...'
+              : 'Scrape Blogic sales data and update Mule Bonus % spreadsheet'}
           </span>
-          {status?.payroll.last_run && (
-            <span style={{ fontSize: 11, color: '#555', marginTop: 4 }}>
-              Last run: {fmt(status.payroll.last_run)}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={sendTexts}
-          disabled={payrollRunning || textsRunning || !macOnline}
-          style={{
-            padding: '28px 20px', borderRadius: 14,
-            background: textsRunning ? '#1a1a1a' : '#1a2a1a',
-            border: `2px solid ${textsRunning ? '#2ecc71' : '#2ecc7155'}`,
-            color: textsRunning ? '#2ecc71' : '#fff',
-            cursor: textsRunning || payrollRunning || !macOnline ? 'not-allowed' : 'pointer',
-            display: 'flex', flexDirection: 'column', gap: 8,
-            alignItems: 'flex-start', transition: 'all 0.2s',
-            opacity: !macOnline ? 0.4 : 1
-          }}
-        >
-          <span style={{ fontSize: 28 }}>{textsRunning ? '📤' : '💬'}</span>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>
-            {textsRunning ? 'Sending...' : 'Send to Staff'}
-          </span>
-          <span style={{ fontSize: 12, color: '#888', textAlign: 'left' }}>
-            {textsRunning ? 'Texting employees via iMessage' : 'Text pay summary to each employee'}
-          </span>
-          {status?.texts.last_run && (
-            <span style={{ fontSize: 11, color: '#555', marginTop: 4 }}>
-              Last sent: {fmt(status.texts.last_run)}
+          {status?.mule.last_run && (
+            <span style={{ fontSize: 12, color: '#555', marginTop: 4 }}>
+              Last run: {fmt(status.mule.last_run)}
             </span>
           )}
         </button>
       </div>
 
-      {/* Last results */}
-      {(status?.payroll.last_result || status?.texts.last_result) && (
+      {/* Last result */}
+      {status?.mule.last_result && (
         <div style={{
           background: '#111', borderRadius: 12, padding: '16px 20px',
-          marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 10
+          marginBottom: 24
         }}>
-          {status?.payroll.last_result && (
-            <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ color: status.payroll.last_result === 'success' ? '#2ecc71' : '#c0392b' }}>
-                {status.payroll.last_result === 'success' ? '✓' : '✗'}
-              </span>
-              <span style={{ color: '#888' }}>Payroll:</span>
-              <span style={{ color: status.payroll.last_result === 'success' ? '#2ecc71' : '#c0392b' }}>
-                {status.payroll.last_result === 'success' ? 'Completed successfully' : status.payroll.last_result}
-              </span>
-            </div>
-          )}
-          {status?.texts.last_result && (
-            <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ color: status.texts.last_result === 'success' ? '#2ecc71' : '#c0392b' }}>
-                {status.texts.last_result === 'success' ? '✓' : '✗'}
-              </span>
-              <span style={{ color: '#888' }}>Texts:</span>
-              <span style={{ color: status.texts.last_result === 'success' ? '#2ecc71' : '#c0392b' }}>
-                {status.texts.last_result === 'success' ? 'Sent to all employees' : status.texts.last_result}
-              </span>
-            </div>
-          )}
+          <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span style={{ color: status.mule.last_result === 'success' ? '#9b59b6' : '#c0392b' }}>
+              {status.mule.last_result === 'success' ? '✓' : '✗'}
+            </span>
+            <span style={{ color: '#888' }}>Last result:</span>
+            <span style={{ color: status.mule.last_result === 'success' ? '#9b59b6' : '#c0392b' }}>
+              {status.mule.last_result === 'success' ? 'Spreadsheet updated successfully' : status.mule.last_result}
+            </span>
+          </div>
         </div>
       )}
 
@@ -273,7 +222,7 @@ export default function Payroll() {
             style={{
               background: '#0d0d0d', border: '1px solid #222',
               borderRadius: 10, padding: '16px', fontSize: 11,
-              color: '#4a9', fontFamily: 'monospace', lineHeight: 1.6,
+              color: '#9b59b6', fontFamily: 'monospace', lineHeight: 1.6,
               maxHeight: 280, overflowY: 'auto', margin: 0,
               whiteSpace: 'pre-wrap', wordBreak: 'break-word'
             }}
@@ -285,11 +234,9 @@ export default function Payroll() {
 
       <div style={{
         borderTop: '1px solid #1a1a1a', paddingTop: 20,
-        fontSize: 12, color: '#444', display: 'flex',
-        justifyContent: 'space-between'
+        fontSize: 12, color: '#444'
       }}>
-        <span>Fred: fred@cpadesmoines.com</span>
-        <span>Polls every 4s</span>
+        Polls every 4s · Updates Mule Bonus %.xlsx on OneDrive
       </div>
     </div>
   )
