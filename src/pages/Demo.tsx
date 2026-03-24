@@ -120,12 +120,11 @@ export default function Demo() {
               }}>
                 ● {d.status}
               </span>
-              <span style={{
-                fontSize: 11, color: '#333', letterSpacing: 2,
-                textTransform: 'uppercase',
-              }}>
-                Coming soon →
-              </span>
+              {d.href ? (
+                <a href={d.href} style={{ fontSize: 11, color: d.color, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', fontWeight: 700 }}>View Demo →</a>
+              ) : (
+                <span style={{ fontSize: 11, color: '#333', letterSpacing: 2, textTransform: 'uppercase' }}>Coming soon →</span>
+              )}
             </div>
           </div>
         ))}
