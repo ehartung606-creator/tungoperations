@@ -1,5 +1,5 @@
 export default function Demo() {
-  const demos: { id: string; title: string; description: string; color: string; status: string; href: string }[] = [
+  const demos: { id: string; title: string; description: string; color: string; status: string; href?: string }[] = [
     {
       id: 'inventory',
       title: 'Inventory System',
