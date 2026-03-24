@@ -2,7 +2,7 @@ export default function Demo() {
   const demos: { id: string; title: string; description: string; color: string; status: string; href?: string }[] = [
     {
       id: 'inventory',
-      href: '/inventory',
+      href: '/demo/inventory',
       title: 'Inventory System',
       description: 'Scanner-driven bottle tracking for bars. Alias barcodes, live sync across devices, automatic order summaries.',
       color: '#aa3bff',

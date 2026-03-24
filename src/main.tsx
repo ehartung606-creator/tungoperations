@@ -7,6 +7,7 @@ import Inventory from './pages/Inventory.tsx'
 import MuleBonus from './pages/MuleBonus.tsx'
 import Demo from './pages/Demo.tsx'
 import StaffDemo from './pages/StaffDemo.tsx'
+import InventoryDemo from './pages/InventoryDemo.tsx'
 import MenuForge from './pages/MenuForge.tsx'
 import './index.css'
 
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/mule" element={<MuleBonus />} />
         <Route path="/demo" element={<Demo />} />
         <Route path="/demo/staff" element={<StaffDemo />} />
+        <Route path="/demo/inventory" element={<InventoryDemo />} />
         <Route path="/menuforge" element={<MenuForge />} />
       </Routes>
     </BrowserRouter>
