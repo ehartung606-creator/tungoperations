@@ -3,629 +3,1262 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<title>MenuForge v0.5 — POS Menu Intelligence</title>
+<title>MenuForge — POS Menu Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-:root {
-  --bg:#0c0c0f; --surface:#141418; --surface2:#1c1c22; --border:#2a2a35;
-  --accent:#e8ff47; --accent2:#ff6b35; --text:#f0f0f0; --muted:#6b6b7a;
-  --success:#4ade80; --radius:10px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,255,71,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
-.wrap{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+  :root {
+    --bg: #0c0c0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --border: #2a2a35;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #6b6b7a;
+    --success: #4ade80;
+    --radius: 10px;
+  }
 
-header{padding:28px 0 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.logo{display:flex;align-items:baseline;gap:10px}
-.logo-name{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;color:var(--accent);line-height:1}
-.logo-sub{font-size:.75rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:500}
-.badge{background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:6px 14px;font-size:.75rem;color:var(--muted);font-family:'DM Mono',monospace}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hero{padding:60px 0 40px;text-align:center}
-.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,6rem);letter-spacing:3px;line-height:.95;margin-bottom:20px}
-.hero h1 span{color:var(--accent);display:block}
-.hero p{max-width:560px;margin:0 auto 36px;color:var(--muted);font-size:1rem;line-height:1.65}
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-.steps{display:flex;justify-content:center;margin-bottom:48px}
-.step{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted);font-weight:500;letter-spacing:.05em;text-transform:uppercase}
-.step .n{width:24px;height:24px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.7rem;flex-shrink:0}
-.step.active .n{background:var(--accent);color:#000;border-color:var(--accent)}
-.step.active{color:var(--text)}
-.step.done .n{background:var(--success);color:#000;border-color:var(--success)}
-.step-sep{width:32px;height:1px;background:var(--border);margin:0 6px;align-self:center}
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.api-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.api-row label{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;white-space:nowrap}
-.api-row input{flex:1;min-width:240px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s}
-.api-row input:focus{border-color:var(--accent)}
-.api-note{font-size:.72rem;color:var(--muted);width:100%;padding-top:4px}
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
 
-.dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:56px 24px;text-align:center;cursor:pointer;transition:all .25s;background:var(--surface);position:relative;overflow:hidden}
-.dropzone:hover,.dropzone.over{border-color:var(--accent);background:rgba(232,255,71,.03)}
-.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.dropzone .icon{font-size:3rem;margin-bottom:16px;display:block}
-.dropzone h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}
-.dropzone p{color:var(--muted);font-size:.85rem;margin-top:6px}
-.dropzone .hint{font-size:.72rem;color:var(--success);margin-top:8px}
+  /* Header */
+  header {
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-.preview-wrap{display:none;gap:24px;margin-top:24px}
-.preview-wrap.on{display:flex;flex-wrap:wrap}
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
 
-.pages-col{flex:1;min-width:280px;max-width:460px;display:flex;flex-direction:column;gap:12px}
-.pages-hdr{display:flex;align-items:center;justify-content:space-between}
-.pages-hdr span{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
-.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;max-height:420px;overflow-y:auto}
+  .logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
 
-.thumb{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface);padding-top:133%}
-.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.thumb .lbl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);font-size:.68rem;color:#ccc;padding:4px 6px;font-family:'DM Mono',monospace;text-align:center}
-.thumb .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:.72rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;line-height:1}
-.thumb:hover .del{opacity:1}
+  .logo-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
 
-.add-tile{border:2px dashed var(--border);border-radius:8px;padding-top:133%;position:relative;cursor:pointer;transition:all .2s;background:var(--surface)}
-.add-tile:hover{border-color:var(--accent)}
-.add-tile input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
-.add-tile .inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:.72rem;z-index:1;pointer-events:none}
-.add-tile:hover .inner{color:var(--accent)}
-.add-tile .plus{font-size:1.6rem;line-height:1}
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
 
-.controls{flex:1;min-width:260px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;display:flex;flex-direction:column;gap:16px}
-.controls h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
-.cg{display:flex;flex-direction:column;gap:6px}
-.cg label{font-size:.82rem;color:var(--text);font-weight:500}
-.cg select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;cursor:pointer}
-.cg select:focus{border-color:var(--accent)}
-.cbrow{display:flex;align-items:center;gap:10px;cursor:pointer}
-.cbrow input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
-.cbrow span{font-size:.83rem}
+  /* Hero */
+  .hero {
+    padding: 60px 0 40px;
+    text-align: center;
+  }
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 28px;border-radius:7px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;transition:all .2s;border:none}
-.btn-y{background:var(--accent);color:#000;width:100%}
-.btn-y:hover{background:#d4e83d;transform:translateY(-1px)}
-.btn-y:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn-g{background:var(--success);color:#000;width:100%;margin-top:8px}
-.btn-g:hover{background:#3ac970;transform:translateY(-1px)}
-.btn-d{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-d:hover{border-color:var(--accent);color:var(--accent)}
-.btn-reset{margin-top:8px;display:none;width:100%}
-.btn-reset.on{display:inline-flex}
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    letter-spacing: 3px;
+    line-height: 0.95;
+    margin-bottom: 20px;
+  }
 
-.proc{display:none;text-align:center;padding:48px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-top:24px}
-.proc.on{display:block}
-.spin{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.proc h3{font-size:1.1rem;margin-bottom:8px;font-weight:600}
-.plog{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--accent);margin-top:16px;min-height:20px}
+  .hero h1 span {
+    color: var(--accent);
+    display: block;
+  }
 
-.err{display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius);padding:20px 24px;margin-top:24px;color:#fca5a5;font-size:.875rem}
-.err.on{display:block}
+  .hero p {
+    max-width: 560px;
+    margin: 0 auto 36px;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.65;
+  }
 
-.res{display:none;margin-top:24px}
-.res.on{display:block}
-.res-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
-.res-hdr h2{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px}
-.stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.sc{flex:1;min-width:100px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;text-align:center}
-.sc .n{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:var(--accent);line-height:1}
-.sc .l{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
-.warns{background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.25);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px}
-.warns h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent2);font-weight:700;margin-bottom:10px}
-.warns ul{list-style:none;display:flex;flex-direction:column;gap:5px}
-.warns li{font-size:.82rem;color:rgba(255,107,53,.9);padding-left:14px;position:relative}
-.warns li::before{content:'→';position:absolute;left:0;color:var(--accent2)}
-.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
-.tab{padding:10px 20px;font-size:.82rem;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none}
-.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
-.tab:hover{color:var(--text)}
-.tc{display:none}
-.tc.on{display:block}
-.tw{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
-table{width:100%;border-collapse:collapse;font-size:.82rem}
-th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;white-space:nowrap;border-bottom:1px solid var(--border)}
-td{padding:9px 14px;border-bottom:1px solid rgba(42,42,53,.6);color:var(--text);vertical-align:top}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(255,255,255,.02)}
-.cb{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em}
-.tCATEGORY{background:rgba(99,102,241,.15);color:#818cf8}
-.tITEM{background:rgba(232,255,71,.12);color:var(--accent)}
-.tMODIFIER_GROUP{background:rgba(255,107,53,.12);color:var(--accent2)}
-.tMODIFIER{background:rgba(74,222,128,.12);color:var(--success)}
-.mono{font-family:'DM Mono',monospace}
-footer{text-align:center;padding:40px 0 32px;color:var(--muted);font-size:.75rem;border-top:1px solid var(--border);margin-top:60px}
+  .steps-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 48px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .step .num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
+
+  .step.active .num { background: var(--accent); color: #000; border-color: var(--accent); }
+  .step.active { color: var(--text); }
+  .step.done .num { background: var(--success); color: #000; border-color: var(--success); }
+
+  .step-sep {
+    width: 32px;
+    height: 1px;
+    background: var(--border);
+    margin: 0 6px;
+    align-self: center;
+  }
+
+  /* API Key input */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .api-section label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .api-section input {
+    flex: 1;
+    min-width: 240px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-section input:focus { border-color: var(--accent); }
+
+  .api-note {
+    font-size: 0.72rem;
+    color: var(--muted);
+    width: 100%;
+    padding-top: 4px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 56px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.03);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .upload-zone h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .upload-zone p {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  /* Preview */
+  .preview-box {
+    display: none;
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .preview-box.visible { display: flex; flex-wrap: wrap; }
+
+  .preview-img-wrap {
+    flex: 1;
+    min-width: 280px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    max-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+  }
+
+  .preview-img-wrap img {
+    max-width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+  }
+
+  /* Controls panel */
+  .controls {
+    flex: 1;
+    min-width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .controls h3 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .control-group label {
+    font-size: 0.82rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .control-group select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .control-group select:focus { border-color: var(--accent); }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  .checkbox-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .checkbox-row span {
+    font-size: 0.83rem;
+    color: var(--text);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 28px;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #d4e83d; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-download {
+    background: var(--success);
+    color: #000;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .btn-download:hover { background: #3ac970; transform: translateY(-1px); }
+
+  /* Processing state */
+  .processing {
+    display: none;
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 24px;
+  }
+
+  .processing.visible { display: block; }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .processing h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .processing-log {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 16px;
+    min-height: 20px;
+  }
+
+  /* Results */
+  .results {
+    display: none;
+    margin-top: 24px;
+  }
+
+  .results.visible { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .results-header h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+  }
+
+  .results-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  /* Tab nav */
+  .tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(42,42,53,0.6);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .type-ITEM { background: rgba(232,255,71,0.12); color: var(--accent); }
+  .type-MODIFIER_GROUP { background: rgba(255,107,53,0.12); color: var(--accent2); }
+  .type-MODIFIER { background: rgba(74,222,128,0.12); color: var(--success); }
+  .type-CATEGORY { background: rgba(99,102,241,0.15); color: #818cf8; }
+
+  .price-cell { font-family: 'DM Mono', monospace; }
+
+  /* Warnings panel */
+  .warnings {
+    background: rgba(255,107,53,0.08);
+    border: 1px solid rgba(255,107,53,0.25);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+
+  .warnings h4 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent2);
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .warnings ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .warnings li {
+    font-size: 0.82rem;
+    color: rgba(255,107,53,0.9);
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .warnings li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent2);
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 100px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    text-align: center;
+  }
+
+  .stat-card .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-card .lbl {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  /* Error */
+  .error-box {
+    display: none;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 24px;
+    color: #fca5a5;
+    font-size: 0.875rem;
+  }
+
+  .error-box.visible { display: block; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 40px 0 32px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 60px;
+  }
+
+  .reset-btn {
+    margin-top: 16px;
+    display: none;
+  }
+
+  .reset-btn.visible { display: inline-flex; }
+
+  /* Modifier order label */
+  .order-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-right: 4px;
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="container">
+  <header>
+    <div class="logo">
+      <span class="logo-text">MenuForge</span>
+      <span class="logo-sub">POS Menu Intelligence</span>
+    </div>
+    <span class="badge">v0.1 — Prototype</span>
+  </header>
 
-<header>
-  <div class="logo">
-    <span class="logo-name">MenuForge</span>
-    <span class="logo-sub">POS Menu Intelligence</span>
+  <section class="hero">
+    <h1>Turn Any Menu Photo<span>Into A POS-Ready Build</span></h1>
+    <p>Upload a photo of any restaurant menu. MenuForge reads it with hospitality industry logic and outputs a structured Excel file ready for POS import — with modifier groups ordered the way a restaurateur, not an IT tech, would expect.</p>
+
+    <div class="steps-bar">
+      <div class="step active" id="step1"><span class="num">1</span> Upload Menu</div>
+      <div class="step-sep"></div>
+      <div class="step" id="step2"><span class="num">2</span> Configure</div>
+      <div class="step-sep"></div>
+      <div class="step" id="step3"><span class="num">3</span> AI Analysis</div>
+      <div class="step-sep"></div>
+      <div class="step" id="step4"><span class="num">4</span> Export Excel</div>
+    </div>
+  </section>
+
+  <!-- API Key -->
+  <div class="api-section">
+    <label>Anthropic API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+    <p class="api-note">🔒 Your key is used directly in browser — never stored or transmitted to any server. Required to analyze the menu image.</p>
   </div>
-  <span class="badge">v0.6</span>
-</header>
 
-<section class="hero">
-  <h1>Turn Any Menu Photo<span>Into A POS-Ready Build</span></h1>
-  <p>Upload one or more menu pages. MenuForge reads them with hospitality industry logic and outputs a structured file ready for POS import — modifier groups ordered the way a restaurateur expects.</p>
-  <div class="steps">
-    <div class="step active" id="s1"><span class="n">1</span> Upload</div>
-    <div class="step-sep"></div>
-    <div class="step" id="s2"><span class="n">2</span> Configure</div>
-    <div class="step-sep"></div>
-    <div class="step" id="s3"><span class="n">3</span> Analyze</div>
-    <div class="step-sep"></div>
-    <div class="step" id="s4"><span class="n">4</span> Export</div>
+  <!-- Upload -->
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept="image/*" />
+    <span class="upload-icon">📷</span>
+    <h3>Drop a menu photo here</h3>
+    <p>PNG, JPG, HEIC, WEBP — photos, scans, even hand-written menus</p>
   </div>
-</section>
 
-<div class="api-row">
-  <label>Anthropic API Key</label>
-  <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
-  <p class="api-note">🔒 Used only in your browser — never stored or sent to any server.</p>
-</div>
+  <!-- Preview + Controls -->
+  <div class="preview-box" id="previewBox">
+    <div class="preview-img-wrap">
+      <img id="previewImg" src="" alt="Menu preview" />
+    </div>
+    <div class="controls">
+      <h3>Build Options</h3>
 
-<div class="dropzone" id="dz">
-  <input type="file" id="fi" accept="image/*" multiple />
-  <span class="icon">📷</span>
-  <h3>Drop menu photos here</h3>
-  <p>Select multiple files to upload all pages at once</p>
-  <p class="hint">Auto-compressed before sending • PNG, JPG, HEIC, WEBP</p>
-</div>
+      <div class="control-group">
+        <label>POS System Target</label>
+        <select id="posSystem">
+          <option value="generic">Generic / Universal</option>
+          <option value="toast">Toast POS</option>
+          <option value="clover">Clover</option>
+          <option value="aloha">Aloha (NCR)</option>
+          <option value="square">Square for Restaurants</option>
+          <option value="micros">Oracle MICROS</option>
+          <option value="lightspeed">Lightspeed</option>
+        </select>
+      </div>
 
-<div class="preview-wrap" id="pw">
-  <div class="pages-col">
-    <div class="pages-hdr"><span id="pgct">0 pages</span></div>
-    <div class="thumbs" id="tg">
-      <div class="add-tile" id="at">
-        <input type="file" id="ai" accept="image/*" multiple />
-        <div class="inner"><span class="plus">+</span><span>Add page</span></div>
+      <div class="control-group">
+        <label>Restaurant Type</label>
+        <select id="restType">
+          <option value="auto">Auto-Detect</option>
+          <option value="steakhouse">Steakhouse / Fine Dining</option>
+          <option value="casual">Casual Dining</option>
+          <option value="fast_casual">Fast Casual</option>
+          <option value="bar">Bar / Pub</option>
+          <option value="pizza">Pizza / Italian</option>
+          <option value="mexican">Mexican</option>
+          <option value="asian">Asian</option>
+          <option value="seafood">Seafood</option>
+          <option value="bbq">BBQ / Smokehouse</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>Modifier Logic</label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="chkTempFirst" checked />
+          <span>Temp before sides (steaks, burgers, eggs)</span>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="chkAllergens" checked />
+          <span>Flag allergen modifier groups</span>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="chkRequired" checked />
+          <span>Mark required vs optional modifiers</span>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="chkPricing" checked />
+          <span>Upcharge pricing where shown</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="analyzeBtn" disabled>
+        ⚡ Analyze Menu
+      </button>
+
+      <button class="btn reset-btn btn-secondary" id="resetBtn">
+        ↩ Start Over
+      </button>
+    </div>
+  </div>
+
+  <!-- Processing -->
+  <div class="processing" id="processing">
+    <div class="spinner"></div>
+    <h3>Analyzing your menu...</h3>
+    <p style="color:var(--muted);font-size:0.85rem;">Reading items, building modifier groups with restaurant logic</p>
+    <div class="processing-log" id="procLog">Sending image to Claude Vision...</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="results-header">
+      <h2>Build Complete</h2>
+      <div class="results-actions">
+        <button class="btn btn-secondary" id="copyBtn">📋 Copy JSON</button>
       </div>
     </div>
-  </div>
-  <div class="controls">
-    <h3>Build Options</h3>
-    <div class="cg">
-      <label>POS System</label>
-      <select id="pos">
-        <option value="generic">Generic / Universal</option>
-        <option value="toast">Toast POS</option>
-        <option value="clover">Clover</option>
-        <option value="aloha">Aloha (NCR)</option>
-        <option value="square">Square for Restaurants</option>
-        <option value="micros">Oracle MICROS</option>
-        <option value="lightspeed">Lightspeed</option>
-      </select>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="warnings" id="warningsBox" style="display:none">
+      <h4>⚠ Installer Notes</h4>
+      <ul id="warningsList"></ul>
     </div>
-    <div class="cg">
-      <label>Restaurant Type</label>
-      <select id="rt">
-        <option value="auto">Auto-Detect</option>
-        <option value="steakhouse">Steakhouse / Fine Dining</option>
-        <option value="casual">Casual Dining</option>
-        <option value="fast_casual">Fast Casual</option>
-        <option value="bar">Bar / Pub</option>
-        <option value="pizza">Pizza / Italian</option>
-        <option value="mexican">Mexican</option>
-        <option value="asian">Asian</option>
-        <option value="seafood">Seafood</option>
-        <option value="bbq">BBQ / Smokehouse</option>
-      </select>
+
+    <div class="tab-nav">
+      <button class="tab active" data-tab="all">All Rows</button>
+      <button class="tab" data-tab="categories">Categories</button>
+      <button class="tab" data-tab="items">Menu Items</button>
+      <button class="tab" data-tab="modgroups">Modifier Groups</button>
+      <button class="tab" data-tab="modifiers">Modifiers</button>
     </div>
-    <div class="cg">
-      <label>Modifier Logic</label>
-      <div class="cbrow"><input type="checkbox" id="c1" checked /><span>Temp before sides (steaks, burgers, eggs)</span></div>
-      <div class="cbrow"><input type="checkbox" id="c2" checked /><span>Flag allergen modifier groups</span></div>
-      <div class="cbrow"><input type="checkbox" id="c3" checked /><span>Mark required vs optional modifiers</span></div>
-      <div class="cbrow"><input type="checkbox" id="c4" checked /><span>Upcharge pricing where shown</span></div>
+
+    <div class="tab-content active" id="tab-all">
+      <div class="table-wrap"><table id="tableAll"><thead></thead><tbody></tbody></table></div>
     </div>
-    <button class="btn btn-y" id="ab" disabled>⚡ Analyze Menu</button>
-    <button class="btn btn-d btn-reset" id="rb">↩ Start Over</button>
+    <div class="tab-content" id="tab-categories">
+      <div class="table-wrap"><table id="tableCats"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="tab-content" id="tab-items">
+      <div class="table-wrap"><table id="tableItems"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="tab-content" id="tab-modgroups">
+      <div class="table-wrap"><table id="tableMG"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="tab-content" id="tab-modifiers">
+      <div class="table-wrap"><table id="tableMods"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <button class="btn btn-download" id="downloadBtn">⬇ Download Excel (.xlsx via CSV)</button>
   </div>
 </div>
 
-<div class="proc" id="proc">
-  <div class="spin"></div>
-  <h3>Analyzing your menu...</h3>
-  <p style="color:var(--muted);font-size:.85rem">Reading items, building modifier groups with restaurant logic</p>
-  <div class="plog" id="pl">Sending pages to Claude Vision...</div>
-</div>
-
-<div class="err" id="eb"></div>
-
-<div class="res" id="res">
-  <div class="res-hdr">
-    <h2>Build Complete</h2>
-    <button class="btn btn-d" id="cjb">📋 Copy JSON</button>
-  </div>
-  <div class="stats" id="st"></div>
-  <div class="warns" id="wb" style="display:none"><h4>⚠ Installer Notes</h4><ul id="wl"></ul></div>
-  <div class="tabs">
-    <button class="tab on" data-t="all">All Rows</button>
-    <button class="tab" data-t="cats">Categories</button>
-    <button class="tab" data-t="items">Items</button>
-    <button class="tab" data-t="mgs">Modifier Groups</button>
-    <button class="tab" data-t="mods">Modifiers</button>
-  </div>
-  <div class="tc on" id="t-all"><div class="tw"><table id="tAll"><thead></thead><tbody></tbody></table></div></div>
-  <div class="tc" id="t-cats"><div class="tw"><table id="tCats"><thead></thead><tbody></tbody></table></div></div>
-  <div class="tc" id="t-items"><div class="tw"><table id="tItems"><thead></thead><tbody></tbody></table></div></div>
-  <div class="tc" id="t-mgs"><div class="tw"><table id="tMGs"><thead></thead><tbody></tbody></table></div></div>
-  <div class="tc" id="t-mods"><div class="tw"><table id="tMods"><thead></thead><tbody></tbody></table></div></div>
-  <button class="btn btn-g" id="db">⬇ Download CSV (Excel-ready)</button>
-</div>
-
-</div>
-<footer><p>MenuForge v0.5 — Powered by Claude Vision | Not affiliated with Toast, Clover, Aloha, Square, or Oracle</p></footer>
+<footer>
+  <p>MenuForge — Prototype Build | Powered by Claude Vision</p>
+  <p style="margin-top:6px">Not affiliated with Toast, Clover, Aloha, Square, or Oracle.</p>
+</footer>
 
 <script>
-var pages = [];
-var menuData = null;
+// ——————————————————————————————
+// State
+// ——————————————————————————————
+let imageBase64 = null;
+let imageMime = 'image/jpeg';
+let menuData = null;
 
-var dz   = document.getElementById('dz');
-var fi   = document.getElementById('fi');
-var ai   = document.getElementById('ai');
-var at   = document.getElementById('at');
-var pw   = document.getElementById('pw');
-var tg   = document.getElementById('tg');
-var pgct = document.getElementById('pgct');
-var ab   = document.getElementById('ab');
-var rb   = document.getElementById('rb');
-var proc = document.getElementById('proc');
-var pl   = document.getElementById('pl');
-var res  = document.getElementById('res');
-var eb   = document.getElementById('eb');
-var db   = document.getElementById('db');
-var cjb  = document.getElementById('cjb');
+// ——————————————————————————————
+// DOM refs
+// ——————————————————————————————
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const previewBox = document.getElementById('previewBox');
+const previewImg = document.getElementById('previewImg');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const resetBtn = document.getElementById('resetBtn');
+const processing = document.getElementById('processing');
+const procLog = document.getElementById('procLog');
+const results = document.getElementById('results');
+const errorBox = document.getElementById('errorBox');
+const apiKeyInput = document.getElementById('apiKey');
+const downloadBtn = document.getElementById('downloadBtn');
+const copyBtn = document.getElementById('copyBtn');
 
-// ── Compress ────────────────────────────────────────────
-function compress(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = function(e) {
-      var img = new Image();
-      img.onerror = reject;
-      img.onload = function() {
-        var MAX = 1600;
-        var w = img.width, h = img.height;
-        if (w > MAX || h > MAX) {
-          var r = Math.min(MAX/w, MAX/h);
-          w = Math.floor(w*r); h = Math.floor(h*r);
-        }
-        var c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        // target: base64 string length such that length*3/4 < 4MB
-        var LIMIT = (4*1024*1024) * (4/3); // ~5.6M chars
-        var q = 0.82;
-        var du = c.toDataURL('image/jpeg', q);
-        while (du.length > LIMIT && q > 0.1) {
-          q -= 0.1;
-          du = c.toDataURL('image/jpeg', q);
-        }
-        // If still over, shrink canvas
-        if (du.length > LIMIT) {
-          c.width = Math.floor(w*0.6); c.height = Math.floor(h*0.6);
-          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-          du = c.toDataURL('image/jpeg', 0.7);
-        }
-        resolve({ b64: du.split(',')[1], du: du });
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+// ——————————————————————————————
+// File handling
+// ——————————————————————————————
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  imageMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const data = ev.target.result;
+    imageBase64 = data.split(',')[1];
+    previewImg.src = data;
+    previewBox.classList.add('visible');
+    uploadZone.style.display = 'none';
+    analyzeBtn.disabled = false;
+    setStep(2);
+    resetBtn.classList.add('visible');
+  };
+  reader.readAsDataURL(file);
 }
 
-// ── File input ──────────────────────────────────────────
-fi.addEventListener('change', function(e){ addFiles(e.target.files); });
-ai.addEventListener('change', function(e){ addFiles(e.target.files); });
-dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('over'); });
-dz.addEventListener('dragleave', function(){ dz.classList.remove('over'); });
-dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
-
-async function addFiles(list) {
-  if (!list.length) return;
-  pgct.textContent = 'Compressing...';
-  for (var i = 0; i < list.length; i++) {
-    var p = await compress(list[i]);
-    pages.push(p);
-  }
-  renderThumbs();
-  dz.style.display = 'none';
-  pw.classList.add('on');
-  ab.disabled = false;
-  rb.classList.add('on');
-  setStep(2);
-}
-
-// ── Thumbnails ──────────────────────────────────────────
-function renderThumbs() {
-  tg.querySelectorAll('.thumb').forEach(function(el){ el.remove(); });
-  for (var i = 0; i < pages.length; i++) {
-    (function(idx){
-      var d = document.createElement('div'); d.className = 'thumb';
-      var im = document.createElement('img'); im.src = pages[idx].du;
-      var lb = document.createElement('span'); lb.className = 'lbl'; lb.textContent = 'Page '+(idx+1);
-      var bt = document.createElement('button'); bt.className = 'del'; bt.textContent = '✕';
-      bt.addEventListener('click', function(e){
-        e.stopPropagation();
-        pages.splice(idx, 1);
-        renderThumbs();
-        if (!pages.length) reset();
-      });
-      d.appendChild(im); d.appendChild(lb); d.appendChild(bt);
-      tg.insertBefore(d, at);
-    })(i);
-  }
-  pgct.textContent = pages.length + ' page' + (pages.length !== 1 ? 's' : '') + ' loaded';
-}
-
-// ── Reset ───────────────────────────────────────────────
-rb.addEventListener('click', reset);
-function reset() {
-  pages = []; menuData = null;
-  fi.value = ''; ai.value = '';
-  tg.querySelectorAll('.thumb').forEach(function(el){ el.remove(); });
-  pgct.textContent = '0 pages';
-  pw.classList.remove('on');
-  dz.style.display = '';
-  proc.classList.remove('on');
-  res.classList.remove('on');
-  eb.classList.remove('on');
-  rb.classList.remove('on');
-  ab.disabled = true;
+// ——————————————————————————————
+// Reset
+// ——————————————————————————————
+resetBtn.addEventListener('click', () => {
+  imageBase64 = null; menuData = null;
+  fileInput.value = '';
+  previewBox.classList.remove('visible');
+  uploadZone.style.display = '';
+  processing.classList.remove('visible');
+  results.classList.remove('visible');
+  errorBox.classList.remove('visible');
+  resetBtn.classList.remove('visible');
+  analyzeBtn.disabled = true;
   setStep(1);
-}
+});
 
-// ── Steps ───────────────────────────────────────────────
+// ——————————————————————————————
+// Steps
+// ——————————————————————————————
 function setStep(n) {
-  for (var i = 1; i <= 4; i++) {
-    var el = document.getElementById('s'+i);
-    el.className = 'step' + (i < n ? ' done' : (i===n ? ' active' : ''));
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step' + i);
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
   }
 }
 
-// ── Tabs ────────────────────────────────────────────────
-document.querySelectorAll('.tab').forEach(function(tab){
-  tab.addEventListener('click', function(){
-    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
-    document.querySelectorAll('.tc').forEach(function(tc){ tc.classList.remove('on'); });
-    tab.classList.add('on');
-    document.getElementById('t-'+tab.dataset.t).classList.add('on');
+// ——————————————————————————————
+// Tabs
+// ——————————————————————————————
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
   });
 });
 
-// ── Analyze ─────────────────────────────────────────────
-ab.addEventListener('click', async function() {
-  var key = document.getElementById('apiKey').value.trim();
-  if (!key) { showErr('Please enter your Anthropic API key.'); return; }
-  if (!pages.length) { showErr('Please upload at least one menu image.'); return; }
+// ——————————————————————————————
+// Analyze
+// ——————————————————————————————
+analyzeBtn.addEventListener('click', async () => {
+  const apiKey = apiKeyInput.value.trim();
+  if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
+  if (!imageBase64) { showError('Please upload a menu image first.'); return; }
 
-  ab.disabled = true;
-  proc.classList.add('on');
-  res.classList.remove('on');
-  eb.classList.remove('on');
+  analyzeBtn.disabled = true;
+  processing.classList.add('visible');
+  results.classList.remove('visible');
+  errorBox.classList.remove('visible');
   setStep(3);
 
-  var logs = ['Sending pages to Claude Vision...','Reading items and categories...','Building modifier groups...','Applying restaurant logic...','Ordering modifiers...','Finalizing build...'];
-  var li = 0;
-  var iv = setInterval(function(){ if(li < logs.length-1){ li++; pl.textContent = logs[li]; } }, 2500);
+  const logs = [
+    'Sending image to Claude Vision...',
+    'Reading menu items and categories...',
+    'Building modifier groups...',
+    'Applying restaurant-industry logic...',
+    'Ordering modifiers correctly...',
+    'Validating build structure...',
+  ];
+  let li = 0;
+  const logInterval = setInterval(() => {
+    if (li < logs.length - 1) { li++; procLog.textContent = logs[li]; }
+  }, 2500);
 
-  var sys = document.getElementById('pos').value;
-  var rtype = document.getElementById('rt').value;
-  var t1 = document.getElementById('c1').checked;
-  var t2 = document.getElementById('c2').checked;
-  var t3 = document.getElementById('c3').checked;
-  var t4 = document.getElementById('c4').checked;
+  const posSystem = document.getElementById('posSystem').value;
+  const restType = document.getElementById('restType').value;
+  const tempFirst = document.getElementById('chkTempFirst').checked;
+  const allergens = document.getElementById('chkAllergens').checked;
+  const requiredFlag = document.getElementById('chkRequired').checked;
+  const pricing = document.getElementById('chkPricing').checked;
 
-  var sp = 'You are a POS system menu builder. Output a complete POS menu build as a single valid JSON object.\n\nMODIFIER ORDER RULES (critical):\n1. Temperature/doneness FIRST (steaks, burgers, eggs, fish)\n2. Preparation method\n3. Side dish choice\n4. Side modifications (dressing etc) \n5. Add-ons\n6. Special instructions LAST\n\nPOS target: '+sys+'\nRestaurant type: '+(rtype==='auto'?'auto-detect':rtype)+'\n\nOUTPUT RULES:\n- Output ONLY the raw JSON object, zero markdown, zero explanation\n- NO descriptions field (omit or null only)\n- Keep item_name and modifier_name SHORT (1-4 words max)\n- Keep notes to 3 words max or null\n- Infer standard modifier groups even if not shown (burgers need temp, salads need dressing)\n- One unified menu across all pages\n\nJSON structure:\n{"restaurant_name":"","restaurant_type":"","installer_warnings":[],"stats":{"categories":0,"items":0,"modifier_groups":0,"modifiers":0},"rows":[{"row_type":"CATEGORY","category_name":"","item_name":null,"price":null,"modifier_group_name":null,"modifier_group_order":null,"modifier_group_required":null,"modifier_group_min":null,"modifier_group_max":null,"modifier_name":null,"modifier_price_adjustment":null,"allergen_flag":null,"notes":null}]}\n\nrow_type values: CATEGORY, ITEM, MODIFIER_GROUP, MODIFIER\nFor ITEM rows: set category_name, item_name, price\nFor MODIFIER_GROUP rows: set item_name (parent), modifier_group_name, modifier_group_order (1=first shown), modifier_group_required, modifier_group_min, modifier_group_max\nFor MODIFIER rows: set modifier_group_name (parent), modifier_name, modifier_price_adjustment (0 if no charge)';
+  const systemPrompt = `You are a seasoned restaurant POS system consultant with 20+ years of experience building menu structures for systems like Toast, Clover, Aloha, Square, and MICROS. You have deep hospitality industry knowledge about how menus should be logically structured for both kitchen operations and server workflow.
 
+Your job is to analyze a menu image and output a complete, structured POS menu build in JSON format.
 
-  var content = pages.map(function(p){
-    return { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:p.b64 } };
-  });
-  content.push({ type:'text', text:'Analyze '+(pages.length>1?'these '+pages.length+' menu pages':'this menu')+' and output the complete POS build JSON.' });
+CRITICAL MODIFIER ORDERING RULES (this is your core value-add over generic IT):
+1. For proteins (steaks, burgers, chicken, eggs, fish): TEMPERATURE/DONENESS always comes FIRST
+2. THEN: Primary preparation choice (sauce on side, no sauce, etc.)
+3. THEN: Side dish selection (if applicable)
+4. THEN: Side dish modifications (dressing, etc.)
+5. THEN: Add-ons and extras
+6. THEN: Allergen/dietary flags (gluten-free, dairy-free, etc.)
+7. THEN: Special instructions (last, always)
+
+This ordering matters because servers read top-to-bottom and the kitchen needs the most critical info first. A server asking "how do you want that steak?" before "what dressing?" is natural — the reverse is chaos.
+
+POS System target: ${posSystem}
+Restaurant type: ${restType === 'auto' ? 'auto-detect from menu' : restType}
+Apply temp-before-sides logic: ${tempFirst}
+Flag allergen modifier groups: ${allergens}
+Mark required vs optional: ${requiredFlag}
+Include upcharge pricing: ${pricing}
+
+Output ONLY valid JSON in this exact structure (no markdown, no explanation, just the JSON object):
+
+{
+  "restaurant_name": "string or null",
+  "restaurant_type": "string",
+  "detected_pos_hints": "string (any POS-specific formatting you noticed)",
+  "installer_warnings": ["array of strings - things the installer should verify or watch out for"],
+  "stats": {
+    "categories": 0,
+    "items": 0,
+    "modifier_groups": 0,
+    "modifiers": 0
+  },
+  "rows": [
+    {
+      "row_type": "CATEGORY | ITEM | MODIFIER_GROUP | MODIFIER",
+      "category_name": "string",
+      "item_name": "string or null",
+      "description": "string or null",
+      "price": "number or null",
+      "modifier_group_name": "string or null",
+      "modifier_group_order": "number (1-based, defines sequence on POS screen)",
+      "modifier_group_required": "boolean or null",
+      "modifier_group_min": "number or null",
+      "modifier_group_max": "number or null",
+      "modifier_name": "string or null",
+      "modifier_price_adjustment": "number or null",
+      "modifier_is_default": "boolean or null",
+      "allergen_flag": "string or null (e.g. GLUTEN, DAIRY, NUT, SHELLFISH)",
+      "kitchen_display_color": "string or null (suggestion: RED for temp, BLUE for sides, GREEN for add-ons)",
+      "notes": "string or null"
+    }
+  ]
+}
+
+Be thorough. For every menu item that has any kind of choice or customization, build out full modifier groups. Use your restaurant experience to infer modifier groups that SHOULD exist even if not explicitly stated (e.g., a steak always needs a temp modifier group). Mark inferred groups in the notes field.
+
+For categories, use row_type CATEGORY with category_name set.
+For items, use row_type ITEM with category_name, item_name, description, price.
+For modifier groups, use row_type MODIFIER_GROUP with item_name (the parent item), modifier_group_name, modifier_group_order, modifier_group_required, modifier_group_min, modifier_group_max.
+For individual modifiers, use row_type MODIFIER with modifier_group_name (parent group), modifier_name, modifier_price_adjustment.`;
 
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key': key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model:'claude-opus-4-5',
-        max_tokens:32000,
-        system: sp,
-        messages:[{ role:'user', content: content }]
+        model: 'claude-opus-4-5',
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: imageMime, data: imageBase64 }
+            },
+            {
+              type: 'text',
+              text: 'Please analyze this restaurant menu image and output the complete POS menu build JSON as specified. Be thorough with modifier groups — this is going live into a POS system.'
+            }
+          ]
+        }]
       })
     });
-    clearInterval(iv);
-    if (!resp.ok) {
-      var ed = await resp.json().catch(function(){ return {}; });
-      throw new Error(ed.error ? ed.error.message : 'API error '+resp.status);
-    }
-    var data = await resp.json();
-    var txt = data.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
-    // Robustly extract and repair JSON from the response
-    var jsonStr = txt;
-    jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-    var start = jsonStr.indexOf('{');
-    if (start === -1) throw new Error('No JSON object found in response');
-    jsonStr = jsonStr.slice(start);
 
-    // Attempt 1: direct parse
-    try { menuData = JSON.parse(jsonStr); }
-    catch(e1) {
-      // Repair: fix unterminated strings, trailing commas, open braces
-      var repaired = jsonStr;
-      // Remove everything after the last complete value (find last clean boundary)
-      // Close any unterminated string by finding last quote situation
-      repaired = repaired.replace(/,\s*([\]\}])/g, '$1'); // trailing commas
-      // Count open vs close braces/brackets
-      var ob = (repaired.match(/\{/g)||[]).length;
-      var cb = (repaired.match(/\}/g)||[]).length;
-      var oa = (repaired.match(/\[/g)||[]).length;
-      var ca = (repaired.match(/\]/g)||[]).length;
-      // If ends in unterminated string, strip back to last comma or opening
-      if ((repaired.match(/"/g)||[]).length % 2 !== 0) {
-        var lastQuote = repaired.lastIndexOf('"');
-        // Find the preceding quote
-        var prevQuote = repaired.lastIndexOf('"', lastQuote - 1);
-        if (prevQuote > -1) {
-          // Check if there's a key colon pattern - if so strip the whole key:value
-          var chunk = repaired.slice(prevQuote);
-          if (chunk.indexOf(':') === -1) {
-            // It's a value - close the string
-            repaired = repaired.slice(0, lastQuote) + '"';
-          } else {
-            // Strip back to last comma
-            var lastComma = repaired.lastIndexOf(',', prevQuote);
-            repaired = lastComma > -1 ? repaired.slice(0, lastComma) : repaired.slice(0, prevQuote);
-          }
-        }
-      }
-      repaired = repaired.replace(/,\s*([\]\}])/g, '$1');
-      // Re-count and close
-      ob = (repaired.match(/\{/g)||[]).length;
-      cb = (repaired.match(/\}/g)||[]).length;
-      oa = (repaired.match(/\[/g)||[]).length;
-      ca = (repaired.match(/\]/g)||[]).length;
-      for (var x = 0; x < oa - ca; x++) repaired += ']';
-      for (var x = 0; x < ob - cb; x++) repaired += '}';
+    clearInterval(logInterval);
 
-      try { menuData = JSON.parse(repaired); }
-      catch(e2) {
-        throw new Error('JSON parse failed after repair: ' + e2.message + '. Raw: ' + jsonStr.slice(0,400));
-      }
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${response.status}`);
     }
-    pl.textContent = 'Build complete!';
-    setTimeout(function(){
-      proc.classList.remove('on');
+
+    const data = await response.json();
+    const rawText = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+
+    // Strip any markdown fences
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    menuData = JSON.parse(clean);
+
+    procLog.textContent = 'Build complete!';
+    setTimeout(() => {
+      processing.classList.remove('visible');
       renderResults(menuData);
       setStep(4);
     }, 600);
-  } catch(e) {
-    clearInterval(iv);
-    proc.classList.remove('on');
-    showErr('Analysis failed: '+e.message);
-    ab.disabled = false;
+
+  } catch (err) {
+    clearInterval(logInterval);
+    processing.classList.remove('visible');
+    showError('Analysis failed: ' + err.message);
+    analyzeBtn.disabled = false;
     setStep(2);
   }
 });
 
-// ── Render results ───────────────────────────────────────
-function renderResults(d) {
-  res.classList.add('on');
-  var s = d.stats||{};
-  document.getElementById('st').innerHTML =
-    sc(s.categories||0,'Categories')+sc(s.items||0,'Menu Items')+
-    sc(s.modifier_groups||0,'Mod Groups')+sc(s.modifiers||0,'Modifiers');
-  var wb = document.getElementById('wb'), wl = document.getElementById('wl');
-  if (d.installer_warnings && d.installer_warnings.length) {
-    wb.style.display=''; wl.innerHTML=d.installer_warnings.map(function(w){ return '<li>'+w+'</li>'; }).join('');
+// ——————————————————————————————
+// Render results
+// ——————————————————————————————
+function renderResults(data) {
+  results.classList.add('visible');
+
+  // Stats
+  const s = data.stats || {};
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="num">${s.categories||0}</div><div class="lbl">Categories</div></div>
+    <div class="stat-card"><div class="num">${s.items||0}</div><div class="lbl">Menu Items</div></div>
+    <div class="stat-card"><div class="num">${s.modifier_groups||0}</div><div class="lbl">Mod Groups</div></div>
+    <div class="stat-card"><div class="num">${s.modifiers||0}</div><div class="lbl">Modifiers</div></div>
+  `;
+
+  // Warnings
+  const wb = document.getElementById('warningsBox');
+  const wl = document.getElementById('warningsList');
+  if (data.installer_warnings && data.installer_warnings.length) {
+    wb.style.display = '';
+    wl.innerHTML = data.installer_warnings.map(w => `<li>${w}</li>`).join('');
   }
-  var rows = d.rows||[];
-  rTable('tAll',   rows, colsAll());
-  rTable('tCats',  rows.filter(function(r){ return r.row_type==='CATEGORY'; }), colsCat());
-  rTable('tItems', rows.filter(function(r){ return r.row_type==='ITEM'; }), colsItem());
-  rTable('tMGs',   rows.filter(function(r){ return r.row_type==='MODIFIER_GROUP'; }), colsMG());
-  rTable('tMods',  rows.filter(function(r){ return r.row_type==='MODIFIER'; }), colsMod());
-}
-function sc(n,l){ return '<div class="sc"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
-function cv(v){ return v!=null?String(v):''; }
-function pr(v){ return v!=null?'<span class="mono">$'+Number(v).toFixed(2)+'</span>':''; }
-function adj(v){ return (v!=null&&v!==0)?'<span class="mono" style="color:var(--accent2)">+$'+Number(v).toFixed(2)+'</span>':''; }
-function badge(v){ return v?'<span class="cb t'+v+'">'+v+'</span>':''; }
-function req(v){ return v===true?'✅ Required':v===false?'Optional':''; }
-function on(n){ return n!=null?'<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);font-family:DM Mono,monospace;font-size:.65rem;color:var(--muted)">'+n+'</span>':''; }
 
-function colsAll(){ return [
-  {h:'Type',f:function(r){return badge(r.row_type);}},
-  {h:'Category',f:function(r){return cv(r.category_name);}},
-  {h:'Item',f:function(r){return cv(r.item_name);}},
-  {h:'Price',f:function(r){return pr(r.price);}},
-  {h:'Mod Group',f:function(r){return cv(r.modifier_group_name);}},
-  {h:'Order',f:function(r){return on(r.modifier_group_order);}},
-  {h:'Req',f:function(r){return req(r.modifier_group_required);}},
-  {h:'Modifier',f:function(r){return cv(r.modifier_name);}},
-  {h:'Adj',f:function(r){return adj(r.modifier_price_adjustment);}},
-  {h:'Allergen',f:function(r){return r.allergen_flag?'<span style="color:#f87171;font-size:.72rem;font-weight:600">'+r.allergen_flag+'</span>':''}},
-  {h:'Notes',f:function(r){return r.notes?'<span style="color:var(--muted);font-size:.78rem">'+r.notes+'</span>':'';}},
-];}
-function colsCat(){ return [{h:'Category',f:function(r){return cv(r.category_name);}},{h:'Notes',f:function(r){return cv(r.notes);}}]; }
-function colsItem(){ return [
-  {h:'Category',f:function(r){return cv(r.category_name);}},
-  {h:'Item',f:function(r){return cv(r.item_name);}},
-  {h:'Description',f:function(r){return cv(r.description);}},
-  {h:'Price',f:function(r){return pr(r.price);}},
-  {h:'Allergen',f:function(r){return cv(r.allergen_flag);}},
-  {h:'Notes',f:function(r){return cv(r.notes);}},
-];}
-function colsMG(){ return [
-  {h:'Parent Item',f:function(r){return cv(r.item_name);}},
-  {h:'Group Name',f:function(r){return cv(r.modifier_group_name);}},
-  {h:'Order',f:function(r){return on(r.modifier_group_order);}},
-  {h:'Required',f:function(r){return req(r.modifier_group_required);}},
-  {h:'Min',f:function(r){return cv(r.modifier_group_min);}},
-  {h:'Max',f:function(r){return cv(r.modifier_group_max);}},
-  {h:'Notes',f:function(r){return cv(r.notes);}},
-];}
-function colsMod(){ return [
-  {h:'Parent Group',f:function(r){return cv(r.modifier_group_name);}},
-  {h:'Modifier',f:function(r){return cv(r.modifier_name);}},
-  {h:'Price Adj',f:function(r){return (r.modifier_price_adjustment!=null&&r.modifier_price_adjustment!==0)?'+$'+Number(r.modifier_price_adjustment).toFixed(2):'No charge';}},
-  {h:'Default',f:function(r){return r.modifier_is_default?'✓':'';}},
-  {h:'Allergen',f:function(r){return cv(r.allergen_flag);}},
-  {h:'Notes',f:function(r){return cv(r.notes);}},
-];}
+  const rows = data.rows || [];
 
-function rTable(id, rows, cols) {
-  var t = document.getElementById(id);
-  t.querySelector('thead').innerHTML = '<tr>'+cols.map(function(c){return '<th>'+c.h+'</th>';}).join('')+'</tr>';
-  t.querySelector('tbody').innerHTML = rows.map(function(r){
-    return '<tr>'+cols.map(function(c){return '<td>'+c.f(r)+'</td>';}).join('')+'</tr>';
-  }).join('');
+  renderTable('tableAll', rows, allCols());
+  renderTable('tableCats', rows.filter(r => r.row_type === 'CATEGORY'), catCols());
+  renderTable('tableItems', rows.filter(r => r.row_type === 'ITEM'), itemCols());
+  renderTable('tableMG', rows.filter(r => r.row_type === 'MODIFIER_GROUP'), mgCols());
+  renderTable('tableMods', rows.filter(r => r.row_type === 'MODIFIER'), modCols());
 }
 
-// ── Download CSV ─────────────────────────────────────────
-db.addEventListener('click', function(){
-  if(!menuData) return;
-  var h=['Row Type','Category','Item Name','Description','Price','Modifier Group','Group Order','Required','Min','Max','Modifier Name','Price Adj','Is Default','Allergen','KDS Color','Notes'];
-  var rows=[h];
-  (menuData.rows||[]).forEach(function(r){
-    rows.push([r.row_type||'',r.category_name||'',r.item_name||'',r.description||'',
-      r.price!=null?r.price:'',r.modifier_group_name||'',
-      r.modifier_group_order!=null?r.modifier_group_order:'',
-      r.modifier_group_required!=null?(r.modifier_group_required?'Yes':'No'):'',
-      r.modifier_group_min!=null?r.modifier_group_min:'',r.modifier_group_max!=null?r.modifier_group_max:'',
-      r.modifier_name||'',r.modifier_price_adjustment!=null?r.modifier_price_adjustment:'',
-      r.modifier_is_default!=null?(r.modifier_is_default?'Yes':'No'):'',
-      r.allergen_flag||'',r.kitchen_display_color||'',r.notes||'']);
+function allCols() {
+  return [
+    { key: 'row_type', label: 'Type', render: v => `<span class="cat-badge type-${v}">${v}</span>` },
+    { key: 'category_name', label: 'Category' },
+    { key: 'item_name', label: 'Item' },
+    { key: 'price', label: 'Price', render: v => v != null ? `<span class="price-cell">$${Number(v).toFixed(2)}</span>` : '' },
+    { key: 'modifier_group_name', label: 'Mod Group' },
+    { key: 'modifier_group_order', label: 'Order', render: v => v != null ? `<span class="order-num">${v}</span>` : '' },
+    { key: 'modifier_group_required', label: 'Required', render: v => v === true ? '✅ Yes' : v === false ? 'Optional' : '' },
+    { key: 'modifier_name', label: 'Modifier' },
+    { key: 'modifier_price_adjustment', label: 'Adj', render: v => v != null && v !== 0 ? `<span class="price-cell" style="color:var(--accent2)">+$${Number(v).toFixed(2)}</span>` : '' },
+    { key: 'allergen_flag', label: 'Allergen', render: v => v ? `<span style="color:#f87171;font-size:0.72rem;font-weight:600">${v}</span>` : '' },
+    { key: 'notes', label: 'Notes', render: v => v ? `<span style="color:var(--muted);font-size:0.78rem">${v}</span>` : '' },
+  ];
+}
+
+function catCols() {
+  return [
+    { key: 'category_name', label: 'Category Name' },
+    { key: 'notes', label: 'Notes' },
+  ];
+}
+
+function itemCols() {
+  return [
+    { key: 'category_name', label: 'Category' },
+    { key: 'item_name', label: 'Item Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'price', label: 'Price', render: v => v != null ? `<span class="price-cell">$${Number(v).toFixed(2)}</span>` : '' },
+    { key: 'allergen_flag', label: 'Allergen' },
+    { key: 'notes', label: 'Notes' },
+  ];
+}
+
+function mgCols() {
+  return [
+    { key: 'item_name', label: 'Parent Item' },
+    { key: 'modifier_group_name', label: 'Group Name' },
+    { key: 'modifier_group_order', label: 'Screen Order', render: v => v != null ? `<span class="order-num">${v}</span>` : '' },
+    { key: 'modifier_group_required', label: 'Required', render: v => v === true ? '✅ Required' : 'Optional' },
+    { key: 'modifier_group_min', label: 'Min' },
+    { key: 'modifier_group_max', label: 'Max' },
+    { key: 'allergen_flag', label: 'Allergen Flag' },
+    { key: 'notes', label: 'Notes' },
+  ];
+}
+
+function modCols() {
+  return [
+    { key: 'modifier_group_name', label: 'Parent Group' },
+    { key: 'modifier_name', label: 'Modifier Name' },
+    { key: 'modifier_price_adjustment', label: 'Price Adj', render: v => v != null && v !== 0 ? `+$${Number(v).toFixed(2)}` : 'No charge' },
+    { key: 'modifier_is_default', label: 'Default', render: v => v ? '✓ Default' : '' },
+    { key: 'allergen_flag', label: 'Allergen' },
+    { key: 'notes', label: 'Notes' },
+  ];
+}
+
+function renderTable(id, rows, cols) {
+  const table = document.getElementById(id);
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  thead.innerHTML = '<tr>' + cols.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
+  tbody.innerHTML = rows.map(row =>
+    '<tr>' + cols.map(c => {
+      const v = row[c.key];
+      const rendered = c.render ? c.render(v) : (v ?? '');
+      return `<td>${rendered}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+}
+
+// ——————————————————————————————
+// Download as CSV (Excel-compatible)
+// ——————————————————————————————
+downloadBtn.addEventListener('click', () => {
+  if (!menuData) return;
+  const rows = menuData.rows || [];
+
+  const headers = [
+    'Row Type','Category','Item Name','Description','Price',
+    'Modifier Group','Group Order','Required','Min Selections','Max Selections',
+    'Modifier Name','Price Adjustment','Is Default','Allergen Flag',
+    'Kitchen Display Color','Notes'
+  ];
+
+  const csvRows = [headers];
+
+  rows.forEach(r => {
+    csvRows.push([
+      r.row_type || '',
+      r.category_name || '',
+      r.item_name || '',
+      r.description || '',
+      r.price != null ? r.price : '',
+      r.modifier_group_name || '',
+      r.modifier_group_order != null ? r.modifier_group_order : '',
+      r.modifier_group_required != null ? (r.modifier_group_required ? 'Yes' : 'No') : '',
+      r.modifier_group_min != null ? r.modifier_group_min : '',
+      r.modifier_group_max != null ? r.modifier_group_max : '',
+      r.modifier_name || '',
+      r.modifier_price_adjustment != null ? r.modifier_price_adjustment : '',
+      r.modifier_is_default != null ? (r.modifier_is_default ? 'Yes' : 'No') : '',
+      r.allergen_flag || '',
+      r.kitchen_display_color || '',
+      r.notes || ''
+    ]);
   });
-  var csv=rows.map(function(r){return r.map(function(c){var s=String(c);return(s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\n')>-1)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',');}).join('\n');
-  var name=(menuData.restaurant_name||'MenuForge').replace(/[^a-z0-9]/gi,'_');
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=name+'_POS_Build.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+  const csv = csvRows.map(row =>
+    row.map(cell => {
+      const s = String(cell);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    }).join(',')
+  ).join('\n');
+
+  const name = (menuData.restaurant_name || 'MenuForge_Build').replace(/[^a-z0-9]/gi, '_');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${name}_POS_Build.csv`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 });
 
-// ── Copy JSON ────────────────────────────────────────────
-cjb.addEventListener('click', function(){
-  if(!menuData) return;
-  navigator.clipboard.writeText(JSON.stringify(menuData,null,2));
-  cjb.textContent='✅ Copied!';
-  setTimeout(function(){cjb.textContent='📋 Copy JSON';},2000);
+// ——————————————————————————————
+// Copy JSON
+// ——————————————————————————————
+copyBtn.addEventListener('click', () => {
+  if (!menuData) return;
+  navigator.clipboard.writeText(JSON.stringify(menuData, null, 2));
+  copyBtn.textContent = '✅ Copied!';
+  setTimeout(() => copyBtn.textContent = '📋 Copy JSON', 2000);
 });
 
-function showErr(m){ eb.textContent='❌ '+m; eb.classList.add('on'); }
+// ——————————————————————————————
+// Error helper
+// ——————————————————————————————
+function showError(msg) {
+  errorBox.textContent = '❌ ' + msg;
+  errorBox.classList.add('visible');
+}
 </script>
 </body>
 </html>

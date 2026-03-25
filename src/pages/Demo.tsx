@@ -1,8 +1,7 @@
 export default function Demo() {
-  const demos: { id: string; title: string; description: string; color: string; status: string; href?: string }[] = [
+  const demos = [
     {
       id: 'inventory',
-      href: '/demo/inventory',
       title: 'Inventory System',
       description: 'Scanner-driven bottle tracking for bars. Alias barcodes, live sync across devices, automatic order summaries.',
       color: '#aa3bff',
@@ -10,7 +9,6 @@ export default function Demo() {
     },
     {
       id: 'staff',
-      href: '/demo/staff',
       title: 'Staff App',
       description: 'PIN-based staff portal with shift checklists, notifications inbox, schedule viewer, and cash management.',
       color: '#bc6c25',
@@ -18,7 +16,6 @@ export default function Demo() {
     },
     {
       id: 'social',
-      href: '',
       title: 'Social Media Engine',
       description: 'AI-powered content generation using real bar photos, weekly specials, and national day hooks. Integrated with Publer.',
       color: '#22c55e',
@@ -123,11 +120,12 @@ export default function Demo() {
               }}>
                 ● {d.status}
               </span>
-              {d.href ? (
-                <a href={d.href} style={{ fontSize: 11, color: d.color, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', fontWeight: 700 }}>View Demo →</a>
-              ) : (
-                <span style={{ fontSize: 11, color: '#333', letterSpacing: 2, textTransform: 'uppercase' }}>Coming soon →</span>
-              )}
+              <span style={{
+                fontSize: 11, color: '#333', letterSpacing: 2,
+                textTransform: 'uppercase',
+              }}>
+                Coming soon →
+              </span>
             </div>
           </div>
         ))}

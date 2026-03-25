@@ -33,11 +33,11 @@ export default function Payroll() {
   const [macOnline, setMacOnline] = useState<boolean | null>(null)
   const logRef = useRef<HTMLPreElement>(null)
 
-  const MAC_URL = import.meta.env.VITE_MAC_API_URL || ''
+  const headers = { 'x-payroll-pin': PIN }
 
   const checkStatus = async () => {
     try {
-      const res = await fetch(`${MAC_URL}/api/payroll/status`)
+      const res = await fetch('/api/payroll/status', { headers })
       if (!res.ok) throw new Error()
       const data = await res.json()
       setStatus(data)
@@ -66,12 +66,12 @@ export default function Payroll() {
   }
 
   const runPayroll = async () => {
-    await fetch(`${MAC_URL}/api/payroll/run`, { method: 'POST' })
+    await fetch('/api/payroll/run', { method: 'POST', headers })
     setTimeout(checkStatus, 500)
   }
 
   const sendTexts = async () => {
-    await fetch(`${MAC_URL}/api/payroll/send-texts`, { method: 'POST' })
+    await fetch('/api/payroll/send-texts', { method: 'POST', headers })
     setTimeout(checkStatus, 500)
   }
 
@@ -151,6 +151,7 @@ export default function Payroll() {
             The Copper Cup
           </div>
         </div>
+        {/* Mac status dot */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
             width: 8, height: 8, borderRadius: '50%',
@@ -174,6 +175,7 @@ export default function Payroll() {
 
       {/* Action buttons */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+        {/* Run Payroll */}
         <button
           onClick={runPayroll}
           disabled={payrollRunning || textsRunning || !macOnline}
@@ -193,7 +195,9 @@ export default function Payroll() {
             {payrollRunning ? 'Running...' : 'Run Payroll'}
           </span>
           <span style={{ fontSize: 12, color: '#888', textAlign: 'left' }}>
-            {payrollRunning ? 'Scraping Blogic — this takes a few minutes' : 'Scrape Blogic & fill spreadsheet'}
+            {payrollRunning
+              ? 'Scraping Blogic — this takes a few minutes'
+              : 'Scrape Blogic & fill spreadsheet'}
           </span>
           {status?.payroll.last_run && (
             <span style={{ fontSize: 11, color: '#555', marginTop: 4 }}>
@@ -202,6 +206,7 @@ export default function Payroll() {
           )}
         </button>
 
+        {/* Send to Staff */}
         <button
           onClick={sendTexts}
           disabled={payrollRunning || textsRunning || !macOnline}
@@ -221,7 +226,9 @@ export default function Payroll() {
             {textsRunning ? 'Sending...' : 'Send to Staff'}
           </span>
           <span style={{ fontSize: 12, color: '#888', textAlign: 'left' }}>
-            {textsRunning ? 'Texting employees via iMessage' : 'Text pay summary to each employee'}
+            {textsRunning
+              ? 'Texting employees via iMessage'
+              : 'Text pay summary to each employee'}
           </span>
           {status?.texts.last_run && (
             <span style={{ fontSize: 11, color: '#555', marginTop: 4 }}>
@@ -239,7 +246,9 @@ export default function Payroll() {
         }}>
           {status?.payroll.last_result && (
             <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ color: status.payroll.last_result === 'success' ? '#2ecc71' : '#c0392b' }}>
+              <span style={{
+                color: status.payroll.last_result === 'success' ? '#2ecc71' : '#c0392b'
+              }}>
                 {status.payroll.last_result === 'success' ? '✓' : '✗'}
               </span>
               <span style={{ color: '#888' }}>Payroll:</span>
@@ -250,7 +259,9 @@ export default function Payroll() {
           )}
           {status?.texts.last_result && (
             <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ color: status.texts.last_result === 'success' ? '#2ecc71' : '#c0392b' }}>
+              <span style={{
+                color: status.texts.last_result === 'success' ? '#2ecc71' : '#c0392b'
+              }}>
                 {status.texts.last_result === 'success' ? '✓' : '✗'}
               </span>
               <span style={{ color: '#888' }}>Texts:</span>
@@ -265,7 +276,10 @@ export default function Payroll() {
       {/* Live log */}
       {status?.log && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: '#555', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
+          <div style={{
+            fontSize: 11, color: '#555', letterSpacing: 2,
+            textTransform: 'uppercase', marginBottom: 8
+          }}>
             Live Log
           </div>
           <pre
@@ -283,6 +297,7 @@ export default function Payroll() {
         </div>
       )}
 
+      {/* Footer */}
       <div style={{
         borderTop: '1px solid #1a1a1a', paddingTop: 20,
         fontSize: 12, color: '#444', display: 'flex',
