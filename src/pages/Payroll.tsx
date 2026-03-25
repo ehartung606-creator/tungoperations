@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
-const PIN = import.meta.env.VITE_PAYROLL_PIN || '1234'
+const PIN = import.meta.env.VITE_PAYROLL_PIN || '1855'
 
 const COPPER = '#bc6c25'
 const DARK   = '#080808'

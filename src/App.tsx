@@ -11,7 +11,7 @@ export default function App() {
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:20, width:'100%', maxWidth:540, padding:'0 24px' }}>
         <div style={{ color:'#fff', fontSize:28, fontWeight:400, letterSpacing:10, textTransform:'uppercase', marginBottom:16 }}>Tung Operations</div>
         {tools.map(t => (
-          <a key={t.href} href={t.href} style={{ display:'block', width:'100%', padding:'28px 40px', background:'#0f0f0f', border:'1px solid #1e1e1e', borderRadius:14, color:'#fff', textDecoration:'none', fontSize:18, fontWeight:500, letterSpacing:2, textAlign:'center' }}>{t.label}</a>
+          <a key={t.href} href={t.href} style={{ display:'bloch:'100%', padding:'28px 40px', background:'#0f0f0f', border:'1px solid #1e1e1e', borderRadius:14, color:'#fff', textDecoration:'none', fontSize:18, fontWeight:500, letterSpacing:2, textAlign:'center' }}>{t.label}</a>
         ))}
       </div>
     </div>
