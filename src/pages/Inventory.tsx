@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 const INV_PIN = '5252'
 
 function PinGate({ onUnlock }: { onUnlock: () => void }) {
-  const [input, setInput] = React.useState('')
-  const [shake, setShake] = React.useState(false)
+  const [input, setInput] = useState('')
+  const [shake, setShake] = useState(false)
   const attempt = (val: string) => {
     if (val === INV_PIN) { onUnlock() }
     else if (val.length === INV_PIN.length) { setShake(true); setTimeout(() => { setShake(false); setInput('') }, 600) }
