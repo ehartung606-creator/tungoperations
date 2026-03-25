@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 export default function App() {
   const tools = [
     { href:'/payroll',        label:'Payroll Dashboard' },
