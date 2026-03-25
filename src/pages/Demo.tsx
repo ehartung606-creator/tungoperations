@@ -47,7 +47,7 @@ export default function Demo() {
       </div>
       <div style={{ padding:'64px 40px 48px', maxWidth:900, margin:'0 auto' }}>
         <div style={{ fontSize:11, color:'#444', letterSpacing:6, textTransform:'uppercase', marginBottom:16 }}>Tung Operations</div>
-        <h1 style={{ fontSize:42, fontWeight:400, mgin:'0 0 16px', lineHeight:1.15 }}>Demo Lab</h1>
+        <h1 style={{ fontSize:42, fontWeight:400, margin:'0 0 16px', lineHeight:1.15 }}>Demo Lab</h1>
         <p style={{ fontSize:15, color:'#555', lineHeight:1.7, margin:0, maxWidth:520 }}>A collection of AI-assisted tools built for The Copper Cup and beyond. Each demo is a working prototype you can interact with.</p>
       </div>
       <div style={{ padding:'0 40px 80px', maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:20 }}>
