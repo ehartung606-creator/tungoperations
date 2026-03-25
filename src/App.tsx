@@ -5,7 +5,7 @@ const PIN = '1985'
 export default function App() {
   const [input, setInput] = useState('')
   const [unlocked, setUnlocked] = useState(false)
-  const [shake, setShake] = useState(false)
+  const [_shake, setShake] = useState(false)
 
   const attempt = (val: string) => {
     if (val === PIN) {
