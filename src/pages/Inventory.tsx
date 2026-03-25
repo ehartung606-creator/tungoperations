@@ -1,4 +1,32 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+const INV_PIN = '5252'
+
+function PinGate({ onUnlock }: { onUnlock: () => void }) {
+  const [input, setInput] = React.useState('')
+  const [shake, setShake] = React.useState(false)
+  const attempt = (val: string) => {
+    if (val === INV_PIN) { onUnlock() }
+    else if (val.length === INV_PIN.length) { setShake(true); setTimeout(() => { setShake(false); setInput('') }, 600) }
+  }
+  const press = (d: string) => { const next = input + d; setInput(next); attempt(next) }
+  return (
+    <div style={{ minHeight:'100vh', background:'#0d0d0f', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'IBM Plex Mono', monospace" }}>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:28 }}>
+        <div style={{ color:'#aa3bff', fontSize:11, letterSpacing:'0.4em', textTransform:'uppercase' as const }}>Inventory System</div>
+        <div style={{ display:'flex', gap:14, animation: shake ? 'shake 0.5s ease' : 'none' }}>
+          {[0,1,2,3].map(i => <div key={i} style={{ width:12, height:12, borderRadius:'50%', background: input.length > i ? '#aa3bff' : '#1a1a20', border:'1px solid #333', transition:'background 0.15s' }} />)}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+          {['1','2','3','4','5','6','7','8','9','','0','\u232b'].map((d,i) => (
+            <button key={i} onClick={() => { if (d==='\u232b') setInput(p=>p.slice(0,-1)); else if(d) press(d) }} style={{ width:68, height:68, background: d ? '#111115' : 'transparent', border: d ? '1px solid #222' : 'none', borderRadius:10, color: d==='\u232b' ? '#555' : '#e2e2e8', fontSize: d==='\u232b' ? 18 : 22, fontFamily:'inherit', cursor: d ? 'pointer' : 'default' }}>{d}</button>
+          ))}
+        </div>
+        <style>{'@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}'}</style>
+      </div>
+    </div>
+  )
+}
+
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -199,6 +227,8 @@ const fmt = (ts: number) => new Date(ts).toLocaleString('en-US', {
 // ─────────────────────────────────────────────
 
 export default function Inventory() {
+  const [unlocked, setUnlocked] = React.useState(false)
+  if (!unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const s = localStorage.getItem(LS_PRODUCTS)
