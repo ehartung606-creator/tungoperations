@@ -11,7 +11,8 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
   }
   const press = (d: string) => { const next = input + d; setInput(next); attempt(next) }
   return (
-    <div style={{ minHeight:'100vh', background:'#080808', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Georgia, ser      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:28 }}>
+    <div style={{ minHeight:'100vh', background:'#080808', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Georgia, serif' }}>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:28 }}>
         <div style={{ color:'#22c55e', fontSize:11, letterSpacing:'0.4em', textTransform:'uppercase' as const }}>Demo Lab</div>
         <div style={{ display:'flex', gap:14, animation: shake ? 'shake 0.5s ease' : 'none' }}>
           {[0,1,2,3].map(i => <div key={i} style={{ width:12, height:12, borderRadius:'50%', background: input.length > i ? '#22c55e' : '#1a1a1a', border:'1px solid #333', transition:'background 0.15s' }} />)}
