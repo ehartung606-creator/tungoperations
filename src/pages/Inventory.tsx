@@ -438,7 +438,7 @@ export default function Inventory() {
       color: '#666',
     } as React.CSSProperties,
 
-    stat: (color?: string) => ({
+    stat: () => ({
       display: 'flex',
       flexDirection: 'column' as const,
       alignItems: 'center',
@@ -465,7 +465,6 @@ export default function Inventory() {
       letterSpacing: '0.12em',
       fontWeight: active ? 700 : 400,
       color: active ? '#aa3bff' : '#555',
-      borderBottom: active ? '2px solid #aa3bff' : '2px solid transparent',
       cursor: 'pointer',
       background: 'none',
       border: 'none',
