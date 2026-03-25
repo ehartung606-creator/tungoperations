@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 const PIN = import.meta.env.VITE_PAYROLL_PIN || '1855'
 
 const COPPER = '#bc6c25'
+const MAC_URL = import.meta.env.VITE_MAC_API_URL || 'https://api.tungoperations.com'
 const DARK   = '#080808'
 
 type JobStatus = {
@@ -37,7 +38,7 @@ export default function Payroll() {
 
   const checkStatus = async () => {
     try {
-      const res = await fetch('/api/payroll/status', { headers })
+      const res = await fetch(`${MAC_URL}/api/payroll/status`, { headers })
       if (!res.ok) throw new Error()
       const data = await res.json()
       setStatus(data)
@@ -66,12 +67,12 @@ export default function Payroll() {
   }
 
   const runPayroll = async () => {
-    await fetch('/api/payroll/run', { method: 'POST', headers })
+    await fetch(`${MAC_URL}/api/payroll/run`, { method: 'POST', headers })
     setTimeout(checkStatus, 500)
   }
 
   const sendTexts = async () => {
-    await fetch('/api/payroll/send-texts', { method: 'POST', headers })
+    await fetch(`${MAC_URL}/api/payroll/send-texts`, { method: 'POST', headers })
     setTimeout(checkStatus, 500)
   }
 
