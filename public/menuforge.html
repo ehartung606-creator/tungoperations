@@ -39,7 +39,7 @@ function updateDots(){dots.forEach(function(d,i){d.classList.toggle('on',i<input
 function press(d){
   if(input.length>=4)return;
   input+=d; updateDots();
-  if(put.length===4){
+  if(input.length===4){
     if(input===PIN){window.location.href='/menuforge-app.html';}
     else{
       document.getElementById('dots').classList.add('shake');
