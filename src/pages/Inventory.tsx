@@ -227,7 +227,7 @@ const fmt = (ts: number) => new Date(ts).toLocaleString('en-US', {
 // ─────────────────────────────────────────────
 
 export default function Inventory() {
-  const [unlocked, setUnlocked] = React.useState(false)
+  const [unlocked, setUnlocked] = useState(false)
   if (!unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />
   const [products, setProducts] = useState<Product[]>(() => {
     try {
