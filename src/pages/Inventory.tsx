@@ -1124,6 +1124,8 @@ export default function Inventory() {
   // ──────────────────────────────────────────
   // RENDER
   // ──────────────────────────────────────────
+  if (!unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />
+
   return (
     <div style={S.page}>
       {/* Header */}
