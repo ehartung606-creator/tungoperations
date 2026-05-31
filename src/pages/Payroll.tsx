@@ -67,7 +67,7 @@ export default function Payroll() {
   }
 
   const runPayroll = async () => {
-    await fetch(`${MAC_URL}/api/payroll/run`, { method: 'POST', headers })
+    await fetch(`${MAC_URL}/api/payroll/run-payroll`, { method: 'POST', headers })
     setTimeout(checkStatus, 500)
   }
 
@@ -207,36 +207,6 @@ export default function Payroll() {
           )}
         </button>
 
-        {/* Send to Staff */}
-        <button
-          onClick={sendTexts}
-          disabled={payrollRunning || textsRunning || !macOnline}
-          style={{
-            padding: '28px 20px', borderRadius: 14,
-            background: textsRunning ? '#1a1a1a' : '#1a2a1a',
-            border: `2px solid ${textsRunning ? '#2ecc71' : '#2ecc7155'}`,
-            color: textsRunning ? '#2ecc71' : '#fff',
-            cursor: textsRunning || payrollRunning || !macOnline ? 'not-allowed' : 'pointer',
-            display: 'flex', flexDirection: 'column', gap: 8,
-            alignItems: 'flex-start', transition: 'all 0.2s',
-            opacity: !macOnline ? 0.4 : 1
-          }}
-        >
-          <span style={{ fontSize: 28 }}>{textsRunning ? '📤' : '💬'}</span>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>
-            {textsRunning ? 'Sending...' : 'Send to Staff'}
-          </span>
-          <span style={{ fontSize: 12, color: '#888', textAlign: 'left' }}>
-            {textsRunning
-              ? 'Texting employees via iMessage'
-              : 'Text pay summary to each employee'}
-          </span>
-          {status?.texts.last_run && (
-            <span style={{ fontSize: 11, color: '#555', marginTop: 4 }}>
-              Last sent: {fmt(status.texts.last_run)}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* Last results */}
