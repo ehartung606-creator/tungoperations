@@ -71,11 +71,6 @@ export default function Payroll() {
     setTimeout(checkStatus, 500)
   }
 
-  const sendTexts = async () => {
-    await fetch(`${MAC_URL}/api/payroll/send-texts`, { method: 'POST', headers })
-    setTimeout(checkStatus, 500)
-  }
-
   if (!authed) {
     return (
       <div style={{
