@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Copper Cup — Staff Bio Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #1C1C1A; --bg2: #232320; --card: #26261f;
+    --copper: #B8651A; --copper-bright: #E08A2E;
+    --white: #FFFFFF; --muted: rgba(255,255,255,0.55); --faint: rgba(255,255,255,0.3);
+    --line: rgba(255,255,255,0.1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); font-family: 'Montserrat', sans-serif; color: var(--white); line-height: 1.5; padding: 0 0 60px; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 22px; }
+  header { text-align: center; padding: 44px 22px 30px; border-bottom: 1px solid var(--line); margin-bottom: 30px; }
+  .kicker { font-size: 14px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; color: var(--copper); margin-bottom: 10px; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: 54px; line-height: 0.95; letter-spacing: 1px; }
+  .sub { color: var(--muted); font-size: 15px; font-weight: 300; margin-top: 14px; max-width: 460px; margin-left: auto; margin-right: auto; }
+  .field { margin-bottom: 22px; }
+  label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 9px; color: rgba(255,255,255,0.85); }
+  label .opt { font-weight: 400; color: var(--faint); font-size: 13px; margin-left: 6px; }
+  input[type=text], textarea { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 15px 16px; color: var(--white); font-family: inherit; font-size: 16px; outline: none; transition: border-color .15s; }
+  input[type=text]:focus, textarea:focus { border-color: var(--copper); }
+  input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.25); }
+  textarea { resize: vertical; min-height: 60px; }
+  .name-field input { font-size: 19px; font-weight: 600; }
+  .btn { display: block; width: 100%; border: none; border-radius: 14px; padding: 18px; font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; cursor: pointer; transition: transform .1s, opacity .2s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--copper); color: #fff; }
+  .btn-primary:disabled { opacity: 0.45; cursor: default; }
+  .btn-ghost { background: transparent; color: var(--copper-bright); border: 1px solid var(--copper); }
+  .btn-row { display: flex; gap: 12px; margin-top: 14px; }
+  .btn-row .btn { flex: 1; }
+  .section-tag { font-size: 13px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--copper); margin: 34px 0 18px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  #result { display: none; margin-top: 30px; }
+  .bio-card { background: var(--card); border: 1px solid var(--copper); border-radius: 16px; padding: 26px 24px; }
+  .bio-card .bt { font-size: 13px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--copper); margin-bottom: 14px; }
+  .bio-text { font-size: 19px; font-weight: 300; line-height: 1.55; color: rgba(255,255,255,0.92); }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--copper); color: #fff; padding: 14px 26px; border-radius: 30px; font-weight: 600; font-size: 15px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 99; }
+  .toast.show { opacity: 1; }
+  .done-msg { display: none; text-align: center; padding: 50px 22px; }
+  .done-msg .big { font-family: 'Bebas Neue', sans-serif; font-size: 60px; color: var(--copper-bright); }
+  .done-msg p { color: var(--muted); margin-top: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">The Copper Cup</div>
+  <h1>Tell Us About You</h1>
+  <div class="sub">Answer whatever you want, skip the rest. Then hit generate and we'll write you a bio for the TVs. Don't like it? Generate again. When you love it, send it to Eric.</div>
+</header>
+
+<div class="wrap" id="formWrap">
+  <div class="field name-field">
+    <label>Your Name <span class="opt">(required)</span></label>
+    <input type="text" id="q_name" placeholder="First name is fine">
+  </div>
+
+  <div class="section-tag">The Drinks</div>
+  <div class="field"><label>Favorite drink <span class="opt">(optional)</span></label><input type="text" id="q1" placeholder="Cocktail, beer, wine, anything"></div>
+  <div class="field"><label>Favorite shot <span class="opt">(optional)</span></label><input type="text" id="q2" placeholder="Be honest"></div>
+  <div class="field"><label>Favorite mule to make <span class="opt">(optional)</span></label><input type="text" id="q3" placeholder="Which one do you love making?"></div>
+  <div class="field"><label>Your order when you're OFF the clock <span class="opt">(optional)</span></label><input type="text" id="q4" placeholder="What are you actually drinking?"></div>
+
+  <div class="section-tag">The You</div>
+  <div class="field"><label>Favorite song or artist right now <span class="opt">(optional)</span></label><input type="text" id="q5" placeholder="What's on repeat?"></div>
+  <div class="field"><label>Favorite movie or show <span class="opt">(optional)</span></label><input type="text" id="q6" placeholder=""></div>
+  <div class="field"><label>What you do when you're not working <span class="opt">(optional)</span></label><input type="text" id="q7" placeholder="Hobbies, hangs, whatever"></div>
+  <div class="field"><label>Hidden talent or weird skill <span class="opt">(optional)</span></label><input type="text" id="q8" placeholder="Impress us"></div>
+  <div class="field"><label>Favorite color <span class="opt">(optional)</span></label><input type="text" id="q9" placeholder=""></div>
+  <div class="field"><label>Where do you want to be when you "grow up"? <span class="opt">(optional)</span></label><input type="text" id="q10" placeholder="Dream big or dream dumb"></div>
+
+  <div class="section-tag">The Places</div>
+  <div class="field"><label>Dream travel destination <span class="opt">(optional)</span></label><input type="text" id="q11" placeholder="Where do you want to go?"></div>
+  <div class="field"><label>Favorite place on earth <span class="opt">(optional)</span></label><input type="text" id="q12" placeholder="Where's your happy place?"></div>
+
+  <div class="section-tag">The Fun</div>
+  <div class="field"><label>Your hype song, what plays when you walk in? <span class="opt">(optional)</span></label><input type="text" id="q13" placeholder="Walk-up music"></div>
+  <div class="field"><label>One thing regulars should know about you <span class="opt">(optional)</span></label><input type="text" id="q14" placeholder=""></div>
+  <div class="field"><label>Words you live by <span class="opt">(optional)</span></label><input type="text" id="q15" placeholder="A motto, a catchphrase, whatever"></div>
+
+  <button class="btn btn-primary" id="genBtn" style="margin-top: 30px;">Generate My Bio</button>
+</div>
+
+<div class="wrap" id="result">
+  <div class="bio-card">
+    <div class="bt">Your Bio</div>
+    <div class="bio-text" id="bioText"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" id="regenBtn">Try Again</button>
+    <button class="btn btn-primary" id="sendBtn">Send to Eric</button>
+  </div>
+</div>
+
+<div class="wrap done-msg" id="doneMsg">
+  <div class="big">Sent!</div>
+  <p>Eric's got your bio. Thanks for playing along.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+  const SUPABASE_URL = "https://mfxghjuosyvvmgvimqyk.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_S1DDp4NoqypOPrW7JqfU2w_-j6gyAlM";
+  const API_URL = "https://api.tungoperations.com/api/generate-bio";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const questions = {
+    "Favorite drink": "q1", "Favorite shot": "q2", "Favorite mule to make": "q3",
+    "Off-the-clock order": "q4", "Favorite song or artist": "q5", "Favorite movie or show": "q6",
+    "What they do when not working": "q7", "Hidden talent": "q8", "Favorite color": "q9",
+    "Where they want to be when they grow up": "q10", "Dream travel destination": "q11",
+    "Favorite place on earth": "q12", "Hype song": "q13",
+    "One thing regulars should know": "q14", "Words they live by": "q15"
+  };
+
+  let currentBio = "";
+
+  function collectAnswers() {
+    const a = {};
+    for (const [label, id] of Object.entries(questions)) {
+      const v = document.getElementById(id).value.trim();
+      if (v) a[label] = v;
+    }
+    return a;
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  async function generate() {
+    const name = document.getElementById('q_name').value.trim();
+    if (!name) { toast("Add your name first"); return; }
+    const answers = collectAnswers();
+    const genBtn = document.getElementById('genBtn');
+    const regenBtn = document.getElementById('regenBtn');
+    genBtn.disabled = true; regenBtn.disabled = true;
+    genBtn.innerHTML = '<span class="spinner"></span>';
+    regenBtn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, answers })
+      });
+      const data = await res.json();
+      if (data.bio) {
+        currentBio = data.bio;
+        document.getElementById('bioText').textContent = data.bio;
+        document.getElementById('formWrap').style.display = 'none';
+        document.getElementById('result').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        toast(data.error || "Something went wrong, try again");
+      }
+    } catch (e) {
+      toast("Connection issue, try again");
+    } finally {
+      genBtn.disabled = false; regenBtn.disabled = false;
+      genBtn.innerHTML = 'Generate My Bio';
+      regenBtn.innerHTML = 'Try Again';
+    }
+  }
+
+  async function send() {
+    const name = document.getElementById('q_name').value.trim();
+    const answers = collectAnswers();
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true; sendBtn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const { error } = await sb.from('staff_bios').insert({
+        staff_name: name, answers: answers, generated_bio: currentBio
+      });
+      if (error) { toast("Save failed, try again"); sendBtn.disabled = false; sendBtn.innerHTML = 'Send to Eric'; return; }
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('doneMsg').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      toast("Save failed, try again");
+      sendBtn.disabled = false; sendBtn.innerHTML = 'Send to Eric';
+    }
+  }
+
+  function regen() {
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('formWrap').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById('genBtn').addEventListener('click', generate);
+  document.getElementById('regenBtn').addEventListener('click', regen);
+  document.getElementById('sendBtn').addEventListener('click', send);
+</script>
+</body>
+</html>
