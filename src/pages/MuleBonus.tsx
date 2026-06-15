@@ -31,11 +31,11 @@ export default function MuleBonus() {
   const [macOnline, setMacOnline] = useState<boolean | null>(null)
   const logRef = useRef<HTMLPreElement>(null)
 
-  const MAC_URL = import.meta.env.VITE_MAC_API_URL || ''
+  const MAC_URL = import.meta.env.VITE_MAC_MULE_URL || ''
 
   const checkStatus = async () => {
     try {
-      const res = await fetch(`${MAC_URL}/api/payroll/status`)
+      const res = await fetch(`${MAC_URL}/api/mule/status`)
       if (!res.ok) throw new Error()
       const data = await res.json()
       setStatus(data)
