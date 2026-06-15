@@ -62,7 +62,7 @@ export default function MuleBonus() {
   }
 
   const runMuleBonus = async () => {
-    await fetch(`${MAC_URL}/api/payroll/run-mule-bonus`, { method: 'POST' })
+    await fetch(`${MAC_URL}/api/mule/run-mule-bonus`, { method: 'POST' })
     setTimeout(checkStatus, 500)
   }
 
