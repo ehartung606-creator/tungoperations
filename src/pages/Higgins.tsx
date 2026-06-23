@@ -251,6 +251,12 @@ function TaskBoard() {
             <button onClick={addTask} style={{ background: '#B8651A', color: '#fff', border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Add</button>
           </div>
         )}
+        {view === 'board' && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+            <a href="https://www.jigsawexplorer.com" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, background: '#1a1a18', border: '1px solid #2c2c2a', color: '#B8651A', textDecoration: 'none' }}>🧩 Jigsaw</a>
+            <a href="https://www.nytimes.com/puzzles/sudoku" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, background: '#1a1a18', border: '1px solid #2c2c2a', color: '#B8651A', textDecoration: 'none' }}>🔢 Sudoku</a>
+          </div>
+        )}
         {loading && <p style={{ color: '#888', textAlign: 'center' }}>Loading...</p>}
         {error && <p style={{ color: '#ef5350', textAlign: 'center' }}>Error: {error}</p>}
         {view === 'board' && (isMobile ? (<div>{COLUMNS.map(column)}</div>) : (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>{COLUMNS.map(column)}</div>))}
