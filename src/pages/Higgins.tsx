@@ -56,6 +56,8 @@ function TaskBoard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editText, setEditText] = useState('')
 
   async function cleanup() {
     const now = Date.now()
@@ -91,8 +93,34 @@ function TaskBoard() {
 
   async function addTask() {
     if (!newTitle.trim()) return
-    await supabase.from('life_os_tasks').insert({ title: newTitle.trim(), status: 'todo' })
+    const maxSort = tasks.filter(t => t.status === 'todo').reduce((m, t) => Math.max(m, t.sort_order), 0)
+    await supabase.from('life_os_tasks').insert({ title: newTitle.trim(), status: 'todo', sort_order: maxSort + 10 })
     setNewTitle('')
+    load()
+  }
+
+  async function deleteTask(task: Task) {
+    if (!window.confirm('Delete "' + task.title + '"?')) return
+    await supabase.from('life_os_tasks').delete().eq('id', task.id)
+    load()
+  }
+
+  function startEdit(task: Task) { setEditingId(task.id); setEditText(task.title) }
+  async function saveEdit(task: Task) {
+    if (editText.trim() && editText.trim() !== task.title) {
+      await supabase.from('life_os_tasks').update({ title: editText.trim() }).eq('id', task.id)
+    }
+    setEditingId(null); setEditText('')
+    load()
+  }
+
+  async function reorder(task: Task, dir: 'up' | 'down') {
+    const colTasks = tasks.filter(t => t.status === task.status).sort((a, b) => a.sort_order - b.sort_order)
+    const idx = colTasks.findIndex(t => t.id === task.id)
+    const swapWith = dir === 'up' ? colTasks[idx - 1] : colTasks[idx + 1]
+    if (!swapWith) return
+    await supabase.from('life_os_tasks').update({ sort_order: swapWith.sort_order }).eq('id', task.id)
+    await supabase.from('life_os_tasks').update({ sort_order: task.sort_order }).eq('id', swapWith.id)
     load()
   }
 
@@ -106,26 +134,46 @@ function TaskBoard() {
 
   const btnFont = isMobile ? 13 : 9
   const btnPad = isMobile ? '8px 14px' : '3px 7px'
+  const iconBtn = { fontSize: isMobile ? 15 : 12, background: 'transparent', color: '#777', border: 'none', cursor: 'pointer', padding: '2px 5px' }
 
-  const card = (task: Task) => (
-    <div key={task.id} style={{ background: '#0f0f0e', border: '1px solid #2c2c2a', borderRadius: 8, padding: isMobile ? '14px 14px' : '10px 12px', marginBottom: 8 }}>
-      <div style={{ fontSize: isMobile ? 15 : 13, lineHeight: 1.4 }}>{task.title}</div>
-      {task.category && <div style={{ fontSize: isMobile ? 10 : 9, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>{task.category}</div>}
-      {task.status === 'done' && <div style={{ fontSize: isMobile ? 11 : 9, color: '#6a6', marginTop: 4 }}>{doneAgoLabel(task)}</div>}
-      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-        {COLUMNS.filter(c => c.key !== task.status).map(c => (
-          <button key={c.key} onClick={() => move(task, c.key)} style={{ fontSize: btnFont, background: '#2c2c2a', color: '#ccc', border: 'none', borderRadius: 6, padding: btnPad, cursor: 'pointer' }}>{'\u2192 ' + c.label}</button>
-        ))}
+  const card = (task: Task, colTasks: Task[]) => {
+    const idx = colTasks.findIndex(t => t.id === task.id)
+    const isEditing = editingId === task.id
+    return (
+      <div key={task.id} style={{ background: '#0f0f0e', border: '1px solid #2c2c2a', borderRadius: 8, padding: isMobile ? '14px 14px' : '10px 12px', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+          {isEditing ? (
+            <input value={editText} autoFocus onChange={e => setEditText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveEdit(task); if (e.key === 'Escape') { setEditingId(null); setEditText('') } }} onBlur={() => saveEdit(task)} style={{ flex: 1, background: '#1a1a18', border: '1px solid #B8651A', borderRadius: 4, padding: '4px 8px', color: '#e8e8e6', fontSize: isMobile ? 15 : 13 }} />
+          ) : (
+            <div style={{ fontSize: isMobile ? 15 : 13, lineHeight: 1.4, flex: 1 }}>{task.title}</div>
+          )}
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            <button title="Up" onClick={() => reorder(task, 'up')} disabled={idx === 0} style={{ ...iconBtn, opacity: idx === 0 ? 0.25 : 1 }}>▲</button>
+            <button title="Down" onClick={() => reorder(task, 'down')} disabled={idx === colTasks.length - 1} style={{ ...iconBtn, opacity: idx === colTasks.length - 1 ? 0.25 : 1 }}>▼</button>
+            <button title="Edit" onClick={() => startEdit(task)} style={iconBtn}>✎</button>
+            <button title="Delete" onClick={() => deleteTask(task)} style={{ ...iconBtn, color: '#a55' }}>✕</button>
+          </div>
+        </div>
+        {task.category && <div style={{ fontSize: isMobile ? 10 : 9, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>{task.category}</div>}
+        {task.status === 'done' && <div style={{ fontSize: isMobile ? 11 : 9, color: '#6a6', marginTop: 4 }}>{doneAgoLabel(task)}</div>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+          {COLUMNS.filter(c => c.key !== task.status).map(c => (
+            <button key={c.key} onClick={() => move(task, c.key)} style={{ fontSize: btnFont, background: '#2c2c2a', color: '#ccc', border: 'none', borderRadius: 6, padding: btnPad, cursor: 'pointer' }}>{'\u2192 ' + c.label}</button>
+          ))}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
-  const column = (col: { key: string; label: string }) => (
-    <div key={col.key} style={{ background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 12, padding: 14, maxHeight: isMobile ? 'none' : '70vh', overflowY: isMobile ? 'visible' : 'auto', marginBottom: isMobile ? 14 : 0 }}>
-      <h3 style={{ fontSize: isMobile ? 12 : 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#B8651A', marginBottom: 12 }}>{col.label} ({tasks.filter(t => t.status === col.key).length})</h3>
-      {tasks.filter(t => t.status === col.key).map(card)}
-    </div>
-  )
+  const column = (col: { key: string; label: string }) => {
+    const colTasks = tasks.filter(t => t.status === col.key).sort((a, b) => a.sort_order - b.sort_order)
+    return (
+      <div key={col.key} style={{ background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 12, padding: 14, maxHeight: isMobile ? 'none' : '70vh', overflowY: isMobile ? 'visible' : 'auto', marginBottom: isMobile ? 14 : 0 }}>
+        <h3 style={{ fontSize: isMobile ? 12 : 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#B8651A', marginBottom: 12 }}>{col.label} ({colTasks.length})</h3>
+        {colTasks.map(t => card(t, colTasks))}
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d0c', color: '#e8e8e6', fontFamily: '-apple-system, sans-serif', padding: isMobile ? 16 : 24 }}>
