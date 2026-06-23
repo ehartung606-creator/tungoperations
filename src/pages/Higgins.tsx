@@ -7,6 +7,7 @@ const supabase = createClient(
 )
 
 const HIGGINS_PW = 'wtpnd!1984'
+const SHAKE_CSS = '@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}'
 
 function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   const [input, setInput] = useState('')
@@ -21,7 +22,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
         <div style={{ color:'#B8651A', fontSize:11, letterSpacing:6, textTransform:'uppercase' }}>Higgins</div>
         <input type="password" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} placeholder="Password" autoFocus style={{ background:'#1a1a18', border:'1px solid #2c2c2a', borderRadius:8, padding:'14px 16px', color:'#e8e8e6', fontSize:16, fontFamily:'Georgia, serif', textAlign:'center', width:240 }} />
         <button onClick={submit} style={{ background:'#B8651A', color:'#fff', border:'none', borderRadius:8, padding:'12px 32px', fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'Georgia, serif' }}>Enter</button>
-        <style>{\`@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}\`}</style>
+        <style>{SHAKE_CSS}</style>
       </div>
     </div>
   )
@@ -83,8 +84,7 @@ function TaskBoard() {
   useEffect(() => { load() }, [])
 
   async function move(task: Task, newStatus: string) {
-    const updates: any = { status: newStatus }
-    updates.completed_at = newStatus === 'done' ? new Date().toISOString() : null
+    const updates: { status: string; completed_at: string | null } = { status: newStatus, completed_at: newStatus === 'done' ? new Date().toISOString() : null }
     await supabase.from('life_os_tasks').update(updates).eq('id', task.id)
     load()
   }
@@ -99,8 +99,9 @@ function TaskBoard() {
   function doneAgoLabel(t: Task) {
     if (!t.completed_at) return ''
     const mins = Math.floor((Date.now() - new Date(t.completed_at).getTime()) / 60000)
-    if (mins < 60) return \`\${mins}m ago\`
-    return \`\${Math.floor(mins / 60)}h ago · archives in \${24 - Math.floor(mins / 60)}h\`
+    if (mins < 60) return mins + 'm ago'
+    const hrs = Math.floor(mins / 60)
+    return hrs + 'h ago · archives in ' + (24 - hrs) + 'h'
   }
 
   const btnFont = isMobile ? 13 : 9
@@ -113,7 +114,7 @@ function TaskBoard() {
       {task.status === 'done' && <div style={{ fontSize: isMobile ? 11 : 9, color: '#6a6', marginTop: 4 }}>{doneAgoLabel(task)}</div>}
       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
         {COLUMNS.filter(c => c.key !== task.status).map(c => (
-          <button key={c.key} onClick={() => move(task, c.key)} style={{ fontSize: btnFont, background: '#2c2c2a', color: '#ccc', border: 'none', borderRadius: 6, padding: btnPad, cursor: 'pointer' }}>→ {c.label}</button>
+          <button key={c.key} onClick={() => move(task, c.key)} style={{ fontSize: btnFont, background: '#2c2c2a', color: '#ccc', border: 'none', borderRadius: 6, padding: btnPad, cursor: 'pointer' }}>{'\u2192 ' + c.label}</button>
         ))}
       </div>
     </div>
@@ -152,7 +153,7 @@ function TaskBoard() {
             {archived.length === 0 && <p style={{ color: '#888', textAlign: 'center' }}>Nothing archived yet.</p>}
             {archived.map(t => (
               <div key={t.id} style={{ background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 8, padding: '12px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 14, color: '#bbb' }}>✓ {t.title}</span>
+                <span style={{ fontSize: 14, color: '#bbb' }}>{'\u2713 ' + t.title}</span>
                 <span style={{ fontSize: 11, color: '#666', flexShrink: 0 }}>{t.archived_at ? new Date(t.archived_at).toLocaleDateString() : ''}</span>
               </div>
             ))}
