@@ -131,6 +131,11 @@ function TaskBoard() {
     load()
   }
 
+  async function setDue(task: Task, date: string) {
+    await supabase.from('life_os_tasks').update({ due_date: date || null }).eq('id', task.id)
+    load()
+  }
+
   function doneAgoLabel(t: Task) {
     if (!t.completed_at) return ''
     const mins = Math.floor((Date.now() - new Date(t.completed_at).getTime()) / 60000)
@@ -163,7 +168,9 @@ function TaskBoard() {
           </div>
         </div>
         {task.category && <div style={{ fontSize: isMobile ? 10 : 9, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>{task.category}</div>}
-        {task.due_date && <div style={{ fontSize: isMobile ? 10 : 9, color: '#B8651A', marginTop: 4 }}>due {task.due_date}</div>}
+        <div style={{ marginTop: 6 }}>
+          <input type="date" value={task.due_date || ''} onChange={e => setDue(task, e.target.value)} style={{ fontSize: isMobile ? 11 : 10, background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 4, padding: '3px 6px', color: task.due_date ? '#B8651A' : '#666', colorScheme: 'dark' }} />
+        </div>
         {task.status === 'done' && <div style={{ fontSize: isMobile ? 11 : 9, color: '#6a6', marginTop: 4 }}>{doneAgoLabel(task)}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
           {COLUMNS.filter(c => c.key !== task.status).map(c => (
