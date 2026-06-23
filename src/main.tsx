@@ -9,6 +9,7 @@ import Demo from './pages/Demo.tsx'
 import StaffDemo from './pages/StaffDemo.tsx'
 import InventoryDemo from './pages/InventoryDemo.tsx'
 import MenuForge from './pages/MenuForge.tsx'
+import Higgins from './pages/Higgins.tsx'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/demo/staff" element={<StaffDemo />} />
         <Route path="/demo/inventory" element={<InventoryDemo />} />
         <Route path="/menuforge" element={<MenuForge />} />
+        <Route path="/higgins" element={<Higgins />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

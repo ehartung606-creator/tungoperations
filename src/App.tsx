@@ -5,6 +5,7 @@ export default function App() {
     { href:'/mule',           label:'Mule Bonus %'      },
     { href:'/menuforge.html', label:'MenuForge'         },
     { href:'/demo',           label:'Demo Lab'          },
+    { href:'/higgins',        label:'Higgins'           },
   ]
   return (
     <div style={{ minHeight:'100vh', background:'#080808', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Georgia, serif' }}>
