@@ -19,9 +19,9 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   return (
     <div style={{ minHeight:'100vh', background:'#16161A', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Georgia, serif', padding:24 }}>
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:24, animation: shake ? 'shake 0.5s ease' : 'none' }}>
-        <div style={{ color:'#7C6FF0', fontSize:11, letterSpacing:6, textTransform:'uppercase' }}>Higgins</div>
+        <div style={{ color:'#9E4A52', fontSize:11, letterSpacing:6, textTransform:'uppercase' }}>Higgins</div>
         <input type="password" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} placeholder="Password" autoFocus style={{ background:'#1a1a18', border:'1px solid #2c2c2a', borderRadius:8, padding:'14px 16px', color:'#e8e8e6', fontSize:16, fontFamily:'Georgia, serif', textAlign:'center', width:240 }} />
-        <button onClick={submit} style={{ background:'#7C6FF0', color:'#fff', border:'none', borderRadius:8, padding:'12px 32px', fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'Georgia, serif' }}>Enter</button>
+        <button onClick={submit} style={{ background:'#9E4A52', color:'#fff', border:'none', borderRadius:8, padding:'12px 32px', fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'Georgia, serif' }}>Enter</button>
         <style>{SHAKE_CSS}</style>
       </div>
     </div>
@@ -40,7 +40,7 @@ const COLUMNS = [
 const DAY = 24 * 60 * 60 * 1000
 
 // Higgins identity + life-domain context colors
-const VIOLET = '#7C6FF0'   // personal / Higgins signature
+const VIOLET = '#9E4A52'   // personal / Higgins signature
 const COPPER = '#B8651A'   // bar / ops
 const SKY = '#4EA8DE'      // travel
 const TEAL = '#3FB28F'     // finance
@@ -163,7 +163,7 @@ function TaskBoard() {
   const btnFont = isMobile ? 13 : 9
   const btnPad = isMobile ? '8px 14px' : '3px 7px'
   const iconBtn = { fontSize: isMobile ? 15 : 12, background: 'transparent', color: '#777', border: 'none', cursor: 'pointer', padding: '2px 5px' }
-  const tabStyle = (active: boolean) => ({ fontSize: 12, fontWeight: 700 as const, padding: '8px 18px', borderRadius: 6, border: 'none', cursor: 'pointer', background: active ? '#7C6FF0' : '#2c2c2a', color: active ? '#fff' : '#aaa' })
+  const tabStyle = (active: boolean) => ({ fontSize: 12, fontWeight: 700 as const, padding: '8px 18px', borderRadius: 6, border: 'none', cursor: 'pointer', background: active ? '#9E4A52' : '#2c2c2a', color: active ? '#fff' : '#aaa' })
 
   const card = (task: Task, colTasks: Task[]) => {
     const idx = colTasks.findIndex(t => t.id === task.id)
@@ -172,7 +172,7 @@ function TaskBoard() {
       <div key={task.id} style={{ background: '#0f0f0e', border: '1px solid #2c2c2a', borderRadius: 8, padding: isMobile ? '14px 14px' : '10px 12px', marginBottom: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
           {isEditing ? (
-            <input value={editText} autoFocus onChange={e => setEditText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveEdit(task); if (e.key === 'Escape') { setEditingId(null); setEditText('') } }} onBlur={() => saveEdit(task)} style={{ flex: 1, background: '#1a1a18', border: '1px solid #7C6FF0', borderRadius: 4, padding: '4px 8px', color: '#e8e8e6', fontSize: isMobile ? 15 : 13 }} />
+            <input value={editText} autoFocus onChange={e => setEditText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveEdit(task); if (e.key === 'Escape') { setEditingId(null); setEditText('') } }} onBlur={() => saveEdit(task)} style={{ flex: 1, background: '#1a1a18', border: '1px solid #9E4A52', borderRadius: 4, padding: '4px 8px', color: '#e8e8e6', fontSize: isMobile ? 15 : 13 }} />
           ) : (
             <div style={{ fontSize: isMobile ? 15 : 13, lineHeight: 1.4, flex: 1 }}>{task.title}</div>
           )}
@@ -185,7 +185,7 @@ function TaskBoard() {
         </div>
         {task.category && <div style={{ fontSize: isMobile ? 10 : 9, color: catColor(task.category), textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>{task.category}</div>}
         <div style={{ marginTop: 6 }}>
-          <input type="date" value={task.due_date || ''} onChange={e => setDue(task, e.target.value)} style={{ fontSize: isMobile ? 11 : 10, background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 4, padding: '3px 6px', color: task.due_date ? '#7C6FF0' : '#666', colorScheme: 'dark' }} />
+          <input type="date" value={task.due_date || ''} onChange={e => setDue(task, e.target.value)} style={{ fontSize: isMobile ? 11 : 10, background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 4, padding: '3px 6px', color: task.due_date ? '#9E4A52' : '#666', colorScheme: 'dark' }} />
         </div>
         {task.status === 'done' && <div style={{ fontSize: isMobile ? 11 : 9, color: '#6a6', marginTop: 4 }}>{doneAgoLabel(task)}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
@@ -201,7 +201,7 @@ function TaskBoard() {
     const colTasks = tasks.filter(t => t.status === col.key).sort((a, b) => a.sort_order - b.sort_order)
     return (
       <div key={col.key} style={{ background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 12, padding: 14, maxHeight: isMobile ? 'none' : '70vh', overflowY: isMobile ? 'visible' : 'auto', marginBottom: isMobile ? 14 : 0 }}>
-        <h3 style={{ fontSize: isMobile ? 12 : 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#7C6FF0', marginBottom: 12 }}>{col.label} ({colTasks.length})</h3>
+        <h3 style={{ fontSize: isMobile ? 12 : 10, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#9E4A52', marginBottom: 12 }}>{col.label} ({colTasks.length})</h3>
         {colTasks.map(t => card(t, colTasks))}
       </div>
     )
@@ -221,14 +221,14 @@ function TaskBoard() {
           const dayTasks = tasks.filter(t => t.due_date === key)
           const isToday = i === 0
           return (
-            <div key={key} style={{ background: '#1a1a18', border: isToday ? '1px solid #7C6FF0' : '1px solid #2c2c2a', borderRadius: 12, padding: 16, marginBottom: 10 }}>
+            <div key={key} style={{ background: '#1a1a18', border: isToday ? '1px solid #9E4A52' : '1px solid #2c2c2a', borderRadius: 12, padding: 16, marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: dayEvents.length || dayTasks.length ? 10 : 0 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: isToday ? '#7C6FF0' : '#e8e8e6', textTransform: 'uppercase', letterSpacing: 1 }}>{isToday ? 'TODAY' : dayNames[d.getDay()]}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: isToday ? '#9E4A52' : '#e8e8e6', textTransform: 'uppercase', letterSpacing: 1 }}>{isToday ? 'TODAY' : dayNames[d.getDay()]}</span>
                 <span style={{ fontSize: 12, color: '#888' }}>{monthNames[d.getMonth()] + ' ' + d.getDate()}</span>
               </div>
               {dayEvents.map(e => (
                 <div key={'e'+e.id} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #242422' }}>
-                  {e.event_time && <span style={{ fontSize: 12, color: '#7C6FF0', fontWeight: 700, minWidth: 64 }}>{e.event_time}</span>}
+                  {e.event_time && <span style={{ fontSize: 12, color: '#9E4A52', fontWeight: 700, minWidth: 64 }}>{e.event_time}</span>}
                   <div>
                     <div style={{ fontSize: 14 }}>{e.title}</div>
                     {e.note && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{e.note}</div>}
@@ -253,8 +253,8 @@ function TaskBoard() {
     <div style={{ minHeight: '100vh', background: '#16161A', color: '#e8e8e6', fontFamily: '-apple-system, sans-serif', padding: isMobile ? 16 : 24 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ color: '#7C6FF0', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase' }}>Tung Operations · Higgins</div>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginTop: 4 }}>{view === 'week' ? 'The Week' : 'Task Board'}</h1>
+          <div style={{ color: '#9E4A52', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase' }}>Tung Operations · Higgins</div>
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginTop: 4, color: '#e8e8e6' }}>{view === 'week' ? 'The Week' : 'Task Board'}</h1>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, margin: '16px 0' }}>
           <button onClick={() => setView('board')} style={tabStyle(view === 'board')}>Board</button>
@@ -264,13 +264,13 @@ function TaskBoard() {
         {view === 'board' && (
           <div style={{ display: 'flex', gap: 8, maxWidth: 500, margin: '0 auto 20px' }}>
             <input value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTask()} placeholder="Add a task..." style={{ flex: 1, background: '#1a1a18', border: '1px solid #2c2c2a', borderRadius: 6, padding: '12px 14px', color: '#e8e8e6', fontSize: 15 }} />
-            <button onClick={addTask} style={{ background: '#7C6FF0', color: '#fff', border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+            <button onClick={addTask} style={{ background: '#9E4A52', color: '#fff', border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Add</button>
           </div>
         )}
         {view === 'board' && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
-            <a href="https://www.jigsawexplorer.com" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, background: '#1a1a18', border: '1px solid #2c2c2a', color: '#7C6FF0', textDecoration: 'none' }}>🧩 Jigsaw</a>
-            <a href="https://www.nytimes.com/puzzles/sudoku" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, background: '#1a1a18', border: '1px solid #2c2c2a', color: '#7C6FF0', textDecoration: 'none' }}>🔢 Sudoku</a>
+            <a href="https://www.jigsawexplorer.com" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, background: '#1a1a18', border: '1px solid #2c2c2a', color: '#9E4A52', textDecoration: 'none' }}>🧩 Jigsaw</a>
+            <a href="https://www.nytimes.com/puzzles/sudoku" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: '8px 16px', borderRadius: 6, background: '#1a1a18', border: '1px solid #2c2c2a', color: '#9E4A52', textDecoration: 'none' }}>🔢 Sudoku</a>
           </div>
         )}
         {loading && <p style={{ color: '#888', textAlign: 'center' }}>Loading...</p>}
