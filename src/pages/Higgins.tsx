@@ -28,7 +28,8 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   )
 }
 
-interface Task { id: number; title: string; status: string; category: string | null; sort_order: number; completed_at: string | null; archived_at: string | null }
+interface Task { id: number; title: string; status: string; category: string | null; sort_order: number; completed_at: string | null; archived_at: string | null; due_date: string | null }
+interface EventRow { id: number; title: string; event_date: string; event_time: string | null; note: string | null; source: string }
 
 const COLUMNS = [
   { key: 'todo', label: 'To Do' },
@@ -48,11 +49,16 @@ function useIsMobile() {
   return isMobile
 }
 
+function ymd(d: Date) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+
 function TaskBoard() {
   const isMobile = useIsMobile()
   const [tasks, setTasks] = useState<Task[]>([])
   const [archived, setArchived] = useState<Task[]>([])
-  const [view, setView] = useState<'board' | 'archive'>('board')
+  const [events, setEvents] = useState<EventRow[]>([])
+  const [view, setView] = useState<'board' | 'week' | 'archive'>('board')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
@@ -78,8 +84,9 @@ function TaskBoard() {
     await cleanup()
     const { data: active, error: e1 } = await supabase.from('life_os_tasks').select('*').is('archived_at', null).order('sort_order', { ascending: true })
     const { data: arch } = await supabase.from('life_os_tasks').select('*').not('archived_at', 'is', null).order('archived_at', { ascending: false })
+    const { data: evs } = await supabase.from('life_os_events').select('*').order('event_date', { ascending: true })
     if (e1) setError(e1.message)
-    else { setTasks(active || []); setArchived(arch || []) }
+    else { setTasks(active || []); setArchived(arch || []); setEvents(evs || []) }
     setLoading(false)
   }
 
@@ -135,6 +142,7 @@ function TaskBoard() {
   const btnFont = isMobile ? 13 : 9
   const btnPad = isMobile ? '8px 14px' : '3px 7px'
   const iconBtn = { fontSize: isMobile ? 15 : 12, background: 'transparent', color: '#777', border: 'none', cursor: 'pointer', padding: '2px 5px' }
+  const tabStyle = (active: boolean) => ({ fontSize: 12, fontWeight: 700 as const, padding: '8px 18px', borderRadius: 6, border: 'none', cursor: 'pointer', background: active ? '#B8651A' : '#2c2c2a', color: active ? '#fff' : '#aaa' })
 
   const card = (task: Task, colTasks: Task[]) => {
     const idx = colTasks.findIndex(t => t.id === task.id)
@@ -155,6 +163,7 @@ function TaskBoard() {
           </div>
         </div>
         {task.category && <div style={{ fontSize: isMobile ? 10 : 9, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>{task.category}</div>}
+        {task.due_date && <div style={{ fontSize: isMobile ? 10 : 9, color: '#B8651A', marginTop: 4 }}>due {task.due_date}</div>}
         {task.status === 'done' && <div style={{ fontSize: isMobile ? 11 : 9, color: '#6a6', marginTop: 4 }}>{doneAgoLabel(task)}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
           {COLUMNS.filter(c => c.key !== task.status).map(c => (
@@ -175,16 +184,59 @@ function TaskBoard() {
     )
   }
 
+  // WEEK VIEW: rolling 7 days from today
+  const weekView = () => {
+    const today = new Date(); today.setHours(0,0,0,0)
+    const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(today); d.setDate(today.getDate() + i); return d })
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    return (
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+        {days.map((d, i) => {
+          const key = ymd(d)
+          const dayEvents = events.filter(e => e.event_date === key)
+          const dayTasks = tasks.filter(t => t.due_date === key)
+          const isToday = i === 0
+          return (
+            <div key={key} style={{ background: '#1a1a18', border: isToday ? '1px solid #B8651A' : '1px solid #2c2c2a', borderRadius: 12, padding: 16, marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: dayEvents.length || dayTasks.length ? 10 : 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: isToday ? '#B8651A' : '#e8e8e6', textTransform: 'uppercase', letterSpacing: 1 }}>{isToday ? 'TODAY' : dayNames[d.getDay()]}</span>
+                <span style={{ fontSize: 12, color: '#888' }}>{monthNames[d.getMonth()] + ' ' + d.getDate()}</span>
+              </div>
+              {dayEvents.map(e => (
+                <div key={'e'+e.id} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #242422' }}>
+                  {e.event_time && <span style={{ fontSize: 12, color: '#B8651A', fontWeight: 700, minWidth: 64 }}>{e.event_time}</span>}
+                  <div>
+                    <div style={{ fontSize: 14 }}>{e.title}</div>
+                    {e.note && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{e.note}</div>}
+                  </div>
+                </div>
+              ))}
+              {dayTasks.map(t => (
+                <div key={'t'+t.id} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #242422' }}>
+                  <span style={{ fontSize: 12, color: '#6a6', fontWeight: 700, minWidth: 64 }}>TASK</span>
+                  <div style={{ fontSize: 14 }}>{t.title}</div>
+                </div>
+              ))}
+              {!dayEvents.length && !dayTasks.length && <div style={{ fontSize: 12, color: '#555' }}>Nothing scheduled</div>}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d0c', color: '#e8e8e6', fontFamily: '-apple-system, sans-serif', padding: isMobile ? 16 : 24 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ color: '#B8651A', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase' }}>Tung Operations · Higgins</div>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginTop: 4 }}>Task Board</h1>
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginTop: 4 }}>{view === 'week' ? 'The Week' : 'Task Board'}</h1>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, margin: '16px 0' }}>
-          <button onClick={() => setView('board')} style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'board' ? '#B8651A' : '#2c2c2a', color: view === 'board' ? '#fff' : '#aaa' }}>Board</button>
-          <button onClick={() => setView('archive')} style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'archive' ? '#B8651A' : '#2c2c2a', color: view === 'archive' ? '#fff' : '#aaa' }}>Archive ({archived.length})</button>
+          <button onClick={() => setView('board')} style={tabStyle(view === 'board')}>Board</button>
+          <button onClick={() => setView('week')} style={tabStyle(view === 'week')}>Week</button>
+          <button onClick={() => setView('archive')} style={tabStyle(view === 'archive')}>Archive ({archived.length})</button>
         </div>
         {view === 'board' && (
           <div style={{ display: 'flex', gap: 8, maxWidth: 500, margin: '0 auto 20px' }}>
@@ -194,9 +246,9 @@ function TaskBoard() {
         )}
         {loading && <p style={{ color: '#888', textAlign: 'center' }}>Loading...</p>}
         {error && <p style={{ color: '#ef5350', textAlign: 'center' }}>Error: {error}</p>}
-        {view === 'board' ? (
-          isMobile ? (<div>{COLUMNS.map(column)}</div>) : (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>{COLUMNS.map(column)}</div>)
-        ) : (
+        {view === 'board' && (isMobile ? (<div>{COLUMNS.map(column)}</div>) : (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>{COLUMNS.map(column)}</div>))}
+        {view === 'week' && weekView()}
+        {view === 'archive' && (
           <div style={{ maxWidth: 600, margin: '0 auto' }}>
             {archived.length === 0 && <p style={{ color: '#888', textAlign: 'center' }}>Nothing archived yet.</p>}
             {archived.map(t => (
