@@ -195,7 +195,7 @@ export default function Payroll() {
               ? 'Scraping Blogic — this takes a few minutes'
               : 'Scrape Blogic & fill spreadsheet'}
           </span>
-          {status?.payroll.last_run && (
+          {status?.payroll?.last_run && (
             <span style={{ fontSize: 11, color: '#555', marginTop: 4 }}>
               Last run: {fmt(status.payroll.last_run)}
             </span>
@@ -205,12 +205,12 @@ export default function Payroll() {
       </div>
 
       {/* Last results */}
-      {(status?.payroll.last_result || status?.texts.last_result) && (
+      {(status?.payroll?.last_result || status?.texts?.last_result) && (
         <div style={{
           background: '#111', borderRadius: 12, padding: '16px 20px',
           marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 10
         }}>
-          {status?.payroll.last_result && (
+          {status?.payroll?.last_result && (
             <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
               <span style={{
                 color: status.payroll.last_result === 'success' ? '#2ecc71' : '#c0392b'
@@ -223,7 +223,7 @@ export default function Payroll() {
               </span>
             </div>
           )}
-          {status?.texts.last_result && (
+          {status?.texts?.last_result && (
             <div style={{ fontSize: 13, display: 'flex', gap: 10, alignItems: 'center' }}>
               <span style={{
                 color: status.texts.last_result === 'success' ? '#2ecc71' : '#c0392b'
