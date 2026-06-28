@@ -123,8 +123,8 @@ export default function Payroll() {
     )
   }
 
-  const payrollRunning = status?.payroll.running
-  const textsRunning   = status?.texts.running
+  const payrollRunning = status?.payroll?.running
+  const textsRunning   = status?.texts?.running
 
   return (
     <div style={{
