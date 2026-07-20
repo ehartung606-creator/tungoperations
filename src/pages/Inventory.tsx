@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import * as XLSX from 'xlsx'
 
 // ─────────────────────────────────────────────
 // PIN GATE
@@ -279,7 +280,7 @@ const fmt = (ts: number) => new Date(ts).toLocaleString('en-US', {
 // ─────────────────────────────────────────────
 
 export default function Inventory() {
-  const [unlocked, setUnlocked] = useState(false)
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('inv_unlocked') === '1')
   const [products, setProducts]   = useState<Product[]>([])
   const [movements, setMovements] = useState<Movement[]>([])
   const [loading, setLoading]     = useState(true)
@@ -341,6 +342,14 @@ export default function Inventory() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'movements' }, async () => {
         const { data } = await supabase.from('movements').select('*').order('timestamp', { ascending: false })
         if (data) setMovements(data.map(fromMovRow))
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sync_signal' }, async () => {
+        const [{ data: p }, { data: m }] = await Promise.all([
+          supabase.from('products').select('*').order('name'),
+          supabase.from('movements').select('*').order('timestamp', { ascending: false }),
+        ])
+        if (p) setProducts(p.map(fromRow))
+        if (m) setMovements(m.map(fromMovRow))
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -431,42 +440,49 @@ export default function Inventory() {
     if (e.key === 'Enter') processScan(scanInput)
   }
 
-  // ── Export order list as CSV ──
-  const exportOrderCSV = () => {
-    const toOrder = movements.reduce((acc, m) => {
-      acc[m.productId] = (acc[m.productId] || 0) + m.qty
-      return acc
-    }, {} as Record<string, number>)
+  // ── Export order list as Excel (.xlsx) ──
+  // Order qty is driven by gap to PAR (par - on_hand), NOT scan tally, so
+  // manual on-hand corrections flow straight in. At/above PAR excluded. By name.
+  const exportOrderXLSX = () => {
+    const orderRows = products
+      .filter(p => p.active)
+      .map(p => ({ p, need: Math.max(0, p.par - p.onHand) }))
+      .filter(x => x.need > 0)
+      .sort((a, b) => a.p.name.localeCompare(b.p.name))
 
-    const rows = [['Product', 'Category', 'Qty Scanned', 'PAR', 'On Hand', 'ABD Cost', 'Cost w/ 4%']]
-    Object.entries(toOrder).forEach(([id, qty]) => {
-      const p = products.find(x => x.id === id)
-      if (p) rows.push([
-        p.name, p.category,
-        String(qty), String(p.par), String(p.onHand),
-        `$${p.abdCost.toFixed(2)}`,
-        `$${(p.abdCost * 1.04).toFixed(2)}`
-      ])
+    const header = ['Product', 'Category', 'PAR', 'On Hand', 'Qty to Order', 'ABD Cost', 'Cost +4%', 'Line Total']
+    const aoa: (string | number)[][] = [header]
+    let totalBottles = 0, totalCost = 0
+    orderRows.forEach(({ p, need }) => {
+      const unit = p.abdCost * 1.04
+      const line = unit * need
+      totalBottles += need
+      totalCost += line
+      aoa.push([p.name, p.category, p.par, p.onHand, need,
+        Number(p.abdCost.toFixed(2)), Number(unit.toFixed(2)), Number(line.toFixed(2))])
     })
+    aoa.push([])
+    aoa.push(['TOTAL', '', '', '', totalBottles, '', '', Number(totalCost.toFixed(2))])
 
-    const csv = rows.map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `copper-cup-order-${new Date().toISOString().slice(0,10)}.csv`
-    a.click()
+    const ws = XLSX.utils.aoa_to_sheet(aoa)
+    ws['!cols'] = [{wch:24},{wch:12},{wch:6},{wch:8},{wch:12},{wch:10},{wch:10},{wch:11}]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Order')
+    XLSX.writeFile(wb, `copper-cup-order-${new Date().toISOString().slice(0,10)}.xlsx`)
   }
 
-  // ── Submit order: clear movements, reset on-hand to PAR ──
+  // ── Submit order: reset on-hand to PAR, clear movements, broadcast ──
+  // Two bulk writes (not a 99-row loop), then bump sync_signal so every other
+  // device (the bar) re-pulls once and repaints — no manual refresh.
   const submitOrder = async () => {
     setSyncing(true)
-    // Reset all on_hand to par in Supabase
-    for (const p of products) {
-      await supabase.from('products').update({ on_hand: p.par }).eq('id', p.id)
+    const pars = Array.from(new Set(products.map(p => p.par)))
+    for (const parVal of pars) {
+      const ids = products.filter(p => p.par === parVal).map(p => p.id)
+      await supabase.from('products').update({ on_hand: parVal }).in('id', ids)
     }
-    // Clear all movements
     await supabase.from('movements').delete().neq('id', 'x')
+    await supabase.from('sync_signal').update({ updated_at: new Date().toISOString() }).eq('id', 'inventory')
     setProducts(prev => prev.map(p => ({ ...p, onHand: p.par })))
     setMovements([])
     setConfirmClear(false)
@@ -539,11 +555,6 @@ export default function Inventory() {
     .filter(p => categoryFilter === 'All' || p.category === categoryFilter)
     .filter(p => !productSearch || p.name.toLowerCase().includes(productSearch.toLowerCase())
                                || p.barcodes.some(b => b.includes(productSearch)))
-
-  const orderSummary = movements.reduce((acc, m) => {
-    acc[m.productId] = (acc[m.productId] || 0) + m.qty
-    return acc
-  }, {} as Record<string, number>)
 
   // ── STYLES ──
   const S = {
@@ -1068,7 +1079,7 @@ export default function Inventory() {
       <div style={{ display:'flex', gap:'12px', alignItems:'center', marginBottom:'16px', flexWrap:'wrap' }}>
         <div style={{ color:'#888', fontSize:'12px' }}>{movements.length} scans this cycle</div>
         <div style={{ marginLeft:'auto', display:'flex', gap:'8px' }}>
-          <button style={S.btn('ghost')} onClick={exportOrderCSV}>Export Order CSV</button>
+          <button style={S.btn('ghost')} onClick={exportOrderXLSX}>Export Order Excel</button>
           {!confirmClear
             ? <button style={S.btn('success')} onClick={() => setConfirmClear(true)}>✓ Submit Order &amp; Clear</button>
             : (
@@ -1082,14 +1093,14 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/* Order summary */}
-      {Object.keys(orderSummary).length > 0 && (() => {
-        const orderItems = Object.entries(orderSummary).map(([id, qty]) => ({
-          p: products.find(x => x.id === id),
-          qty
-        })).filter(x => x.p)
+      {/* Order summary — gap to PAR (par - on_hand), sorted by name */}
+      {products.some(p => p.active && p.onHand < p.par) && (() => {
+        const orderItems = products
+          .filter(p => p.active && p.onHand < p.par)
+          .map(p => ({ p, qty: Math.max(0, p.par - p.onHand) }))
+          .sort((a, b) => a.p.name.localeCompare(b.p.name))
         const totalBottles = orderItems.reduce((s, x) => s + x.qty, 0)
-        const totalCost    = orderItems.reduce((s, x) => s + bestCost(x.p!) * x.qty, 0)
+        const totalCost    = orderItems.reduce((s, x) => s + bestCost(x.p) * x.qty, 0)
         return (
           <div style={{ ...S.card, marginBottom:'16px' }}>
             {/* Totals row */}
@@ -1108,15 +1119,15 @@ export default function Inventory() {
             <div style={{ fontSize:'11px', color:'#555', letterSpacing:'0.1em', marginBottom:'10px' }}>LINE ITEMS</div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:'8px' }}>
               {orderItems.map(({ p, qty }) => (
-                <div key={p!.id} style={{ background:'#1a1a20', borderRadius:'5px', padding:'8px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px' }}>
+                <div key={p.id} style={{ background:'#1a1a20', borderRadius:'5px', padding:'8px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px' }}>
                   <div>
-                    <div style={{ fontSize:'12px', color:'#e2e2e8', fontWeight:600 }}>{p!.name}</div>
+                    <div style={{ fontSize:'12px', color:'#e2e2e8', fontWeight:600 }}>{p.name}</div>
                     <div style={{ fontSize:'10px', color:'#555', marginTop:'2px' }}>
-                      {qty} × ${bestCost(p!).toFixed(2)} (ABD +4%)
+                      {qty} × ${bestCost(p).toFixed(2)} (ABD +4%)
                     </div>
                   </div>
                   <div style={{ textAlign:'right', flexShrink:0 }}>
-                    <div style={{ fontSize:'13px', fontWeight:700, color:'#22c55e' }}>${(bestCost(p!) * qty).toFixed(2)}</div>
+                    <div style={{ fontSize:'13px', fontWeight:700, color:'#22c55e' }}>${(bestCost(p) * qty).toFixed(2)}</div>
                     <div style={{ fontSize:'10px', color:'#555' }}>{qty} btl</div>
                   </div>
                 </div>
@@ -1185,11 +1196,12 @@ export default function Inventory() {
         </div>
 
         <div style={S.card}>
-          <div style={{ fontSize:'11px', color:'#555', letterSpacing:'0.1em', marginBottom:'8px' }}>EXPORT ORDER CSV</div>
+          <div style={{ fontSize:'11px', color:'#555', letterSpacing:'0.1em', marginBottom:'8px' }}>EXPORT ORDER EXCEL</div>
           <p style={{ fontSize:'12px', color:'#888', marginBottom:'12px', lineHeight:1.6 }}>
-            Downloads a CSV of scanned items with quantities, PAR, on-hand, ABD cost and cost +4%.
+            Downloads an Excel (.xlsx) of every item below PAR with the quantity needed to
+            reach PAR, ABD cost and cost +4%. Driven by on-hand counts, not scan tally.
           </p>
-          <button style={S.btn('primary')} onClick={exportOrderCSV}>Download CSV</button>
+          <button style={S.btn('primary')} onClick={exportOrderXLSX}>Download Excel</button>
         </div>
 
         <div style={S.card}>
@@ -1240,7 +1252,7 @@ export default function Inventory() {
   // ──────────────────────────────────────────
   // RENDER
   // ──────────────────────────────────────────
-  if (!unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />
+  if (!unlocked) return <PinGate onUnlock={() => { sessionStorage.setItem('inv_unlocked','1'); setUnlocked(true) }} />
 
   if (loading) return (
     <div style={{ ...S.page, display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh' }}>
