@@ -774,6 +774,43 @@ export default function Inventory() {
   }
 
   // ──────────────────────────────────────────
+  // SHARED: MOVEMENT LOG TABLE
+  // ──────────────────────────────────────────
+  const renderMovementLog = () => (
+    <div style={{ background:'#111115', border:'1px solid #252530', borderRadius:'8px', overflow:'hidden' }}>
+      <table style={S.table}>
+        <thead>
+          <tr>
+            {['Time','Product','Barcode','Direction','On Hand After'].map(h => (
+              <th key={h} style={S.th}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {movements.length === 0 && (
+            <tr>
+              <td colSpan={5} style={{ ...S.td, textAlign:'center', color:'#444', padding:'32px' }}>
+                No scans yet this cycle
+              </td>
+            </tr>
+          )}
+          {movements.map(m => (
+            <tr key={m.id}>
+              <td style={{ ...S.td, color:'#666', fontSize:'11px' }}>{fmt(m.timestamp)}</td>
+              <td style={{ ...S.td, fontWeight:600, color:'#e2e2e8' }}>{m.productName}</td>
+              <td style={{ ...S.td, color:'#555', fontSize:'11px', letterSpacing:'0.06em' }}>{m.barcode}</td>
+              <td style={S.td}>
+                <span style={S.pill(m.direction === 'OUT' ? '#f97316' : '#22c55e')}>{m.direction}</span>
+              </td>
+              <td style={{ ...S.td, color:'#888' }}>{m.onHandAfter}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+
+  // ──────────────────────────────────────────
   // SCAN TAB
   // ──────────────────────────────────────────
   const renderScan = () => {
@@ -828,28 +865,9 @@ export default function Inventory() {
           ))}
         </div>
 
-        {/* Items below PAR */}
-        {itemsBelowPar.length > 0 && (
-          <div style={S.card}>
-            <div style={{ fontSize:'11px', color:'#555', letterSpacing:'0.1em', marginBottom:'12px' }}>BELOW PAR</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px,1fr))', gap:'8px' }}>
-              {itemsBelowPar.map(p => {
-                const level = stockLevel(p)
-                return (
-                  <div key={p.id} style={{
-                    background:'#1a1a20', border:`1px solid ${levelColors[level]}44`,
-                    borderRadius:'6px', padding:'10px 12px'
-                  }}>
-                    <div style={{ fontSize:'12px', fontWeight:600, color:'#e2e2e8', marginBottom:'4px' }}>{p.name}</div>
-                    <div style={{ fontSize:'11px', color: levelColors[level] }}>
-                      {p.onHand} of {p.par} PAR
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        {/* Movement log — live scan history */}
+        <div style={{ fontSize:'11px', color:'#555', letterSpacing:'0.1em', marginBottom:'12px' }}>MOVEMENT LOG</div>
+        {renderMovementLog()}
       </div>
     )
   }
@@ -1137,38 +1155,7 @@ export default function Inventory() {
         )
       })()}
 
-      {/* Movement log */}
-      <div style={{ background:'#111115', border:'1px solid #252530', borderRadius:'8px', overflow:'hidden' }}>
-        <table style={S.table}>
-          <thead>
-            <tr>
-              {['Time','Product','Barcode','Direction','On Hand After'].map(h => (
-                <th key={h} style={S.th}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {movements.length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ ...S.td, textAlign:'center', color:'#444', padding:'32px' }}>
-                  No scans yet this cycle
-                </td>
-              </tr>
-            )}
-            {movements.map(m => (
-              <tr key={m.id}>
-                <td style={{ ...S.td, color:'#666', fontSize:'11px' }}>{fmt(m.timestamp)}</td>
-                <td style={{ ...S.td, fontWeight:600, color:'#e2e2e8' }}>{m.productName}</td>
-                <td style={{ ...S.td, color:'#555', fontSize:'11px', letterSpacing:'0.06em' }}>{m.barcode}</td>
-                <td style={S.td}>
-                  <span style={S.pill(m.direction === 'OUT' ? '#f97316' : '#22c55e')}>{m.direction}</span>
-                </td>
-                <td style={{ ...S.td, color:'#888' }}>{m.onHandAfter}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
     </div>
   )
 
@@ -1293,7 +1280,7 @@ export default function Inventory() {
       <div style={S.tabs}>
         {(['scan','products','movements','settings'] as Tab[]).map(t => (
           <button key={t} style={S.tab(tab === t)} onClick={() => setTab(t)}>
-            {t === 'scan' ? '⬡ Scan' : t === 'products' ? '▤ Products' : t === 'movements' ? '↓ Movements' : '⚙ Settings'}
+            {t === 'scan' ? '⬡ Scan' : t === 'products' ? '▤ Products' : t === 'movements' ? '✓ Submit' : '⚙ Settings'}
           </button>
         ))}
       </div>
