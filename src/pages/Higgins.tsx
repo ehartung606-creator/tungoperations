@@ -29,7 +29,9 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
 }
 
 interface Task { id: number; title: string; status: string; category: string | null; sort_order: number; completed_at: string | null; archived_at: string | null; due_date: string | null }
-interface EventRow { id: number; title: string; event_date: string; event_time: string | null; note: string | null; source: string }
+interface EventRow { id: number; title: string; event_date: string; event_time: string | null; note: string | null; source: string; category: string | null; location: string | null }
+interface Trip { id: number; title: string; start_date: string | null; end_date: string | null; destination: string | null; notes: string | null }
+interface Booking { id: number; trip_id: number; kind: string; label: string | null; date: string | null; time: string | null; confirmation: string | null; notes: string | null }
 
 const COLUMNS = [
   { key: 'todo', label: 'To Do' },
@@ -39,12 +41,11 @@ const COLUMNS = [
 ]
 const DAY = 24 * 60 * 60 * 1000
 
-// Higgins identity + life-domain context colors
-const VIOLET = '#9E4A52'   // personal / Higgins signature
-const COPPER = '#B8651A'   // bar / ops
-const SKY = '#2A6FA0'      // travel
-const TEAL = '#1F8466'     // finance
-const CRIMSON = '#C23A3F'  // urgent only
+const VIOLET = '#9E4A52'
+const COPPER = '#B8651A'
+const SKY = '#2A6FA0'
+const TEAL = '#1F8466'
+const CRIMSON = '#C23A3F'
 const CAT_COLORS: Record<string, string> = {
   personal: VIOLET, ops: COPPER, bar: COPPER, coppercup: COPPER,
   travel: SKY, trip: SKY, finance: TEAL, money: TEAL, financial: TEAL,
@@ -74,12 +75,27 @@ function TaskBoard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [archived, setArchived] = useState<Task[]>([])
   const [events, setEvents] = useState<EventRow[]>([])
-  const [view, setView] = useState<'board' | 'week' | 'archive'>('board')
+  const [trips, setTrips] = useState<Trip[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [view, setView] = useState<'board' | 'week' | 'trips' | 'archive'>('board')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editText, setEditText] = useState('')
+
+  // add-event form state
+  const [evTitle, setEvTitle] = useState('')
+  const [evDate, setEvDate] = useState('')
+  const [evTime, setEvTime] = useState('')
+  const [evCat, setEvCat] = useState('personal')
+  const [evNote, setEvNote] = useState('')
+
+  // add-trip form state
+  const [trTitle, setTrTitle] = useState('')
+  const [trDest, setTrDest] = useState('')
+  const [trStart, setTrStart] = useState('')
+  const [trEnd, setTrEnd] = useState('')
 
   async function cleanup() {
     const now = Date.now()
@@ -101,8 +117,10 @@ function TaskBoard() {
     const { data: active, error: e1 } = await supabase.from('life_os_tasks').select('*').is('archived_at', null).order('sort_order', { ascending: true })
     const { data: arch } = await supabase.from('life_os_tasks').select('*').not('archived_at', 'is', null).order('archived_at', { ascending: false })
     const { data: evs } = await supabase.from('life_os_events').select('*').order('event_date', { ascending: true })
+    const { data: trs } = await supabase.from('life_os_trips').select('*').order('start_date', { ascending: true })
+    const { data: bks } = await supabase.from('life_os_bookings').select('*').order('date', { ascending: true })
     if (e1) setError(e1.message)
-    else { setTasks(active || []); setArchived(arch || []); setEvents(evs || []) }
+    else { setTasks(active || []); setArchived(arch || []); setEvents(evs || []); setTrips(trs || []); setBookings(bks || []) }
     setLoading(false)
   }
 
@@ -152,6 +170,43 @@ function TaskBoard() {
     load()
   }
 
+  async function addEvent() {
+    if (!evTitle.trim() || !evDate) { window.alert('Event needs a title and a date.'); return }
+    await supabase.from('life_os_events').insert({ title: evTitle.trim(), event_date: evDate, event_time: evTime || null, category: evCat || null, note: evNote || null, source: 'manual' })
+    setEvTitle(''); setEvDate(''); setEvTime(''); setEvCat('personal'); setEvNote('')
+    load()
+  }
+
+  async function deleteEvent(ev: EventRow) {
+    if (!window.confirm('Delete "' + ev.title + '"?')) return
+    await supabase.from('life_os_events').delete().eq('id', ev.id)
+    load()
+  }
+
+  async function addTrip() {
+    if (!trTitle.trim()) { window.alert('Trip needs a title.'); return }
+    await supabase.from('life_os_trips').insert({ title: trTitle.trim(), destination: trDest || null, start_date: trStart || null, end_date: trEnd || null })
+    setTrTitle(''); setTrDest(''); setTrStart(''); setTrEnd('')
+    load()
+  }
+
+  async function deleteTrip(tr: Trip) {
+    if (!window.confirm('Delete trip "' + tr.title + '" and all its bookings?')) return
+    await supabase.from('life_os_trips').delete().eq('id', tr.id)
+    load()
+  }
+
+  async function addBooking(tripId: number, kind: string, label: string, date: string, time: string, confirmation: string) {
+    if (!label.trim()) { window.alert('Booking needs a label.'); return }
+    await supabase.from('life_os_bookings').insert({ trip_id: tripId, kind, label: label.trim(), date: date || null, time: time || null, confirmation: confirmation || null })
+    load()
+  }
+
+  async function deleteBooking(b: Booking) {
+    await supabase.from('life_os_bookings').delete().eq('id', b.id)
+    load()
+  }
+
   function doneAgoLabel(t: Task) {
     if (!t.completed_at) return ''
     const mins = Math.floor((Date.now() - new Date(t.completed_at).getTime()) / 60000)
@@ -163,7 +218,8 @@ function TaskBoard() {
   const btnFont = isMobile ? 13 : 9
   const btnPad = isMobile ? '8px 14px' : '3px 7px'
   const iconBtn = { fontSize: isMobile ? 15 : 12, background: 'transparent', color: '#778', border: 'none', cursor: 'pointer', padding: '2px 5px' }
-  const tabStyle = (active: boolean) => ({ fontSize: 12, fontWeight: 700 as const, padding: '8px 18px', borderRadius: 6, border: 'none', cursor: 'pointer', background: active ? '#9E4A52' : '#FAF8F2', color: active ? '#fff' : '#556' })
+  const tabStyle = (active: boolean) => ({ fontSize: 12, fontWeight: 700 as const, padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', background: active ? '#9E4A52' : '#FAF8F2', color: active ? '#fff' : '#556' })
+  const fieldStyle = { background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 6, padding: '10px 12px', color: '#1a1a1a', fontSize: 14, colorScheme: 'light' as const }
 
   const card = (task: Task, colTasks: Task[]) => {
     const idx = colTasks.findIndex(t => t.id === task.id)
@@ -207,7 +263,6 @@ function TaskBoard() {
     )
   }
 
-  // WEEK VIEW: rolling 7 days from today
   const weekView = () => {
     const today = new Date(); today.setHours(0,0,0,0)
     const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(today); d.setDate(today.getDate() + i); return d })
@@ -215,6 +270,25 @@ function TaskBoard() {
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     return (
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
+        <div style={{ background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#9E4A52', marginBottom: 10 }}>Add an event</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <input value={evTitle} onChange={e => setEvTitle(e.target.value)} placeholder="What is it?" style={fieldStyle} />
+            <input type="date" value={evDate} onChange={e => setEvDate(e.target.value)} style={fieldStyle} />
+            <input value={evTime} onChange={e => setEvTime(e.target.value)} placeholder="Time (e.g. 10:30 AM)" style={fieldStyle} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr auto', gap: 8 }}>
+            <select value={evCat} onChange={e => setEvCat(e.target.value)} style={fieldStyle}>
+              <option value="personal">Personal</option>
+              <option value="ops">Bar / Ops</option>
+              <option value="travel">Travel</option>
+              <option value="finance">Finance</option>
+              <option value="urgent">Urgent</option>
+            </select>
+            <input value={evNote} onChange={e => setEvNote(e.target.value)} placeholder="Note (optional)" style={fieldStyle} />
+            <button onClick={addEvent} style={{ background: '#9E4A52', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+          </div>
+        </div>
         {days.map((d, i) => {
           const key = ymd(d)
           const dayEvents = events.filter(e => e.event_date === key)
@@ -227,12 +301,13 @@ function TaskBoard() {
                 <span style={{ fontSize: 12, color: '#667' }}>{monthNames[d.getMonth()] + ' ' + d.getDate()}</span>
               </div>
               {dayEvents.map(e => (
-                <div key={'e'+e.id} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #e2e5ea' }}>
+                <div key={'e'+e.id} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: '1px solid #e2e5ea', alignItems: 'flex-start' }}>
                   {e.event_time && <span style={{ fontSize: 12, color: '#9E4A52', fontWeight: 700, minWidth: 64 }}>{e.event_time}</span>}
-                  <div>
-                    <div style={{ fontSize: 14 }}>{e.title}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14 }}>{e.title}{e.category && <span style={{ fontSize: 9, color: catColor(e.category), textTransform: 'uppercase', letterSpacing: 1, marginLeft: 8, fontWeight: 700 }}>{e.category}</span>}</div>
                     {e.note && <div style={{ fontSize: 11, color: '#667', marginTop: 2 }}>{e.note}</div>}
                   </div>
+                  <button onClick={() => deleteEvent(e)} style={{ ...iconBtn, color: '#a55' }}>✕</button>
                 </div>
               ))}
               {dayTasks.map(t => (
@@ -249,16 +324,40 @@ function TaskBoard() {
     )
   }
 
+  const tripsView = () => {
+    return (
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+        <div style={{ background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#9E4A52', marginBottom: 10 }}>Add a trip</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 2fr 1fr 1fr auto', gap: 8 }}>
+            <input value={trTitle} onChange={e => setTrTitle(e.target.value)} placeholder="Trip name" style={fieldStyle} />
+            <input value={trDest} onChange={e => setTrDest(e.target.value)} placeholder="Destination" style={fieldStyle} />
+            <input type="date" value={trStart} onChange={e => setTrStart(e.target.value)} style={fieldStyle} />
+            <input type="date" value={trEnd} onChange={e => setTrEnd(e.target.value)} style={fieldStyle} />
+            <button onClick={addTrip} style={{ background: '#9E4A52', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+          </div>
+        </div>
+        {trips.length === 0 && <p style={{ color: '#667', textAlign: 'center' }}>No trips yet.</p>}
+        {trips.map(tr => (
+          <TripCard key={tr.id} trip={tr} bookings={bookings.filter(b => b.trip_id === tr.id)}
+            onAddBooking={addBooking} onDeleteBooking={deleteBooking} onDeleteTrip={deleteTrip}
+            fieldStyle={fieldStyle} iconBtn={iconBtn} isMobile={isMobile} />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#1B3A5B', color: '#1a1a1a', fontFamily: '-apple-system, sans-serif', padding: isMobile ? 16 : 24 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ color: '#9E4A52', fontSize: 11, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase' }}>Tung Operations · Higgins</div>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginTop: 4, color: '#FAF8F2' }}>{view === 'week' ? 'The Week' : 'Task Board'}</h1>
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, marginTop: 4, color: '#FAF8F2' }}>{view === 'week' ? 'The Week' : view === 'trips' ? 'Trips' : 'Task Board'}</h1>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, margin: '16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, margin: '16px 0', flexWrap: 'wrap' }}>
           <button onClick={() => setView('board')} style={tabStyle(view === 'board')}>Board</button>
           <button onClick={() => setView('week')} style={tabStyle(view === 'week')}>Week</button>
+          <button onClick={() => setView('trips')} style={tabStyle(view === 'trips')}>Trips</button>
           <button onClick={() => setView('archive')} style={tabStyle(view === 'archive')}>Archive ({archived.length})</button>
         </div>
         {view === 'board' && (
@@ -277,12 +376,13 @@ function TaskBoard() {
         {error && <p style={{ color: '#ef5350', textAlign: 'center' }}>Error: {error}</p>}
         {view === 'board' && (isMobile ? (<div>{COLUMNS.map(column)}</div>) : (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>{COLUMNS.map(column)}</div>))}
         {view === 'week' && weekView()}
+        {view === 'trips' && tripsView()}
         {view === 'archive' && (
           <div style={{ maxWidth: 600, margin: '0 auto' }}>
             {archived.length === 0 && <p style={{ color: '#667', textAlign: 'center' }}>Nothing archived yet.</p>}
             {archived.map(t => (
               <div key={t.id} style={{ background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 8, padding: '12px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 14, color: '#bbb' }}>{'\u2713 ' + t.title}</span>
+                <span style={{ fontSize: 14, color: '#556' }}>{'\u2713 ' + t.title}</span>
                 <span style={{ fontSize: 11, color: '#889', flexShrink: 0 }}>{t.archived_at ? new Date(t.archived_at).toLocaleDateString() : ''}</span>
               </div>
             ))}
@@ -290,6 +390,73 @@ function TaskBoard() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function TripCard({ trip, bookings, onAddBooking, onDeleteBooking, onDeleteTrip, fieldStyle, iconBtn, isMobile }: any) {
+  const [kind, setKind] = useState('flight')
+  const [label, setLabel] = useState('')
+  const [date, setDate] = useState('')
+  const [time, setTime] = useState('')
+  const [conf, setConf] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const kindIcon: Record<string, string> = { flight: '✈️', hotel: '🏨', car: '🚗', other: '📌' }
+
+  return (
+    <div style={{ background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{trip.title}</div>
+          <div style={{ fontSize: 12, color: '#667', marginTop: 2 }}>
+            {trip.destination ? trip.destination : ''}{trip.destination && (trip.start_date || trip.end_date) ? ' · ' : ''}
+            {trip.start_date || ''}{trip.end_date ? ' → ' + trip.end_date : ''}
+          </div>
+        </div>
+        <button onClick={() => onDeleteTrip(trip)} style={{ ...iconBtn, color: '#a55' }}>✕</button>
+      </div>
+
+      {bookings.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          {bookings.map((b: Booking) => (
+            <div key={b.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: '1px solid #e2e5ea', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 15, minWidth: 24 }}>{kindIcon[b.kind] || '📌'}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{b.label}</div>
+                <div style={{ fontSize: 12, color: '#667', marginTop: 2 }}>
+                  {b.date || ''}{b.time ? ' · ' + b.time : ''}
+                  {b.confirmation ? <span> · Conf: <span style={{ color: '#9E4A52', fontWeight: 700 }}>{b.confirmation}</span></span> : null}
+                </div>
+              </div>
+              <button onClick={() => onDeleteBooking(b)} style={{ ...iconBtn, color: '#a55' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {open ? (
+        <div style={{ marginTop: 12, borderTop: '1px solid #e2e5ea', paddingTop: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <select value={kind} onChange={e => setKind(e.target.value)} style={fieldStyle}>
+              <option value="flight">Flight</option>
+              <option value="hotel">Hotel</option>
+              <option value="car">Car</option>
+              <option value="other">Other</option>
+            </select>
+            <input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. United DSM→EWR" style={fieldStyle} />
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={fieldStyle} />
+            <input value={time} onChange={e => setTime(e.target.value)} placeholder="Time" style={fieldStyle} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr auto auto', gap: 8 }}>
+            <input value={conf} onChange={e => setConf(e.target.value)} placeholder="Confirmation #" style={fieldStyle} />
+            <button onClick={() => { onAddBooking(trip.id, kind, label, date, time, conf); setLabel(''); setDate(''); setTime(''); setConf(''); setOpen(false) }} style={{ background: '#9E4A52', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Save</button>
+            <button onClick={() => setOpen(false)} style={{ background: '#e6e9ee', color: '#333', border: 'none', borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setOpen(true)} style={{ marginTop: 12, background: '#e6e9ee', color: '#333', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>+ Add flight / hotel / confirmation</button>
+      )}
     </div>
   )
 }
