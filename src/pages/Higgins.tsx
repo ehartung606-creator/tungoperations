@@ -29,7 +29,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
 }
 
 interface Task { id: number; title: string; status: string; category: string | null; sort_order: number; completed_at: string | null; archived_at: string | null; due_date: string | null }
-interface EventRow { id: number; title: string; event_date: string; event_time: string | null; note: string | null; source: string; category: string | null; location: string | null }
+interface EventRow { id: number; title: string; event_date: string; event_time: string | null; note: string | null; source: string; category: string | null; location: string | null; recur: string | null; recur_day: number | null }
 interface Trip { id: number; title: string; start_date: string | null; end_date: string | null; destination: string | null; notes: string | null }
 interface Booking { id: number; trip_id: number; kind: string; label: string | null; date: string | null; time: string | null; confirmation: string | null; notes: string | null }
 
@@ -90,6 +90,8 @@ function TaskBoard() {
   const [evTime, setEvTime] = useState('')
   const [evCat, setEvCat] = useState('personal')
   const [evNote, setEvNote] = useState('')
+  const [evRecur, setEvRecur] = useState('')
+  const [evRecurDay, setEvRecurDay] = useState('1')
 
   // add-trip form state
   const [trTitle, setTrTitle] = useState('')
@@ -171,9 +173,20 @@ function TaskBoard() {
   }
 
   async function addEvent() {
-    if (!evTitle.trim() || !evDate) { window.alert('Event needs a title and a date.'); return }
-    await supabase.from('life_os_events').insert({ title: evTitle.trim(), event_date: evDate, event_time: evTime || null, category: evCat || null, note: evNote || null, source: 'manual' })
-    setEvTitle(''); setEvDate(''); setEvTime(''); setEvCat('personal'); setEvNote('')
+    const isRecurring = evRecur === 'weekly' || evRecur === 'monthly'
+    if (!evTitle.trim()) { window.alert('Event needs a title.'); return }
+    if (!isRecurring && !evDate) { window.alert('A one-time event needs a date.'); return }
+    await supabase.from('life_os_events').insert({
+      title: evTitle.trim(),
+      event_date: isRecurring ? '2020-01-01' : evDate,
+      event_time: evTime || null,
+      category: evCat || null,
+      note: evNote || null,
+      source: 'manual',
+      recur: isRecurring ? evRecur : null,
+      recur_day: isRecurring ? parseInt(evRecurDay, 10) : null,
+    })
+    setEvTitle(''); setEvDate(''); setEvTime(''); setEvCat('personal'); setEvNote(''); setEvRecur(''); setEvRecurDay('1')
     load()
   }
 
@@ -285,13 +298,33 @@ function TaskBoard() {
               <option value="finance">Finance</option>
               <option value="urgent">Urgent</option>
             </select>
+            <select value={evRecur} onChange={e => setEvRecur(e.target.value)} style={fieldStyle}>
+              <option value="">One-time</option>
+              <option value="weekly">Repeat weekly</option>
+              <option value="monthly">Repeat monthly</option>
+            </select>
+            {evRecur === 'weekly' && (
+              <select value={evRecurDay} onChange={e => setEvRecurDay(e.target.value)} style={fieldStyle}>
+                <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+                <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+              </select>
+            )}
+            {evRecur === 'monthly' && (
+              <select value={evRecurDay} onChange={e => setEvRecurDay(e.target.value)} style={fieldStyle}>
+                {Array.from({length:31},(_,i)=>i+1).map(d => <option key={d} value={String(d)}>Day {d}</option>)}
+              </select>
+            )}
             <input value={evNote} onChange={e => setEvNote(e.target.value)} placeholder="Note (optional)" style={fieldStyle} />
             <button onClick={addEvent} style={{ background: '#9E4A52', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Add</button>
           </div>
         </div>
         {days.map((d, i) => {
           const key = ymd(d)
-          const dayEvents = events.filter(e => e.event_date === key)
+          const dayEvents = events.filter(e => {
+            if (e.recur === 'weekly') return e.recur_day === d.getDay()
+            if (e.recur === 'monthly') return e.recur_day === d.getDate()
+            return e.event_date === key
+          })
           const dayTasks = tasks.filter(t => t.due_date === key)
           const isToday = i === 0
           return (
