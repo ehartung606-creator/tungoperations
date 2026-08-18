@@ -353,44 +353,6 @@ function TaskBoard() {
             </div>
           )
         })}
-        {(() => {
-          const horizon = new Date(today); horizon.setDate(today.getDate() + 7)
-          const monthNamesU = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-          const dayNamesU = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-          // one-time events strictly beyond the 7-day window
-          const future = events
-            .filter(e => !e.recur && e.event_date)
-            .filter(e => { const d = new Date(e.event_date + 'T00:00:00'); return d >= horizon })
-            .sort((a, b) => a.event_date.localeCompare(b.event_date))
-          // tasks with a due date beyond the window
-          const futureTasks = tasks
-            .filter(t => t.due_date)
-            .filter(t => { const d = new Date(t.due_date + 'T00:00:00'); return d >= horizon })
-            .sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''))
-          if (!future.length && !futureTasks.length) return null
-          const fmt = (iso: string) => { const d = new Date(iso + 'T00:00:00'); return dayNamesU[d.getDay()] + ' ' + monthNamesU[d.getMonth()] + ' ' + d.getDate() }
-          return (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#9E4A52', marginBottom: 10, paddingLeft: 4 }}>Upcoming</div>
-              {future.map(e => (
-                <div key={'u'+e.id} style={{ background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#9E4A52', minWidth: 90 }}>{fmt(e.event_date)}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14 }}>{e.event_time ? <span style={{ color: '#9E4A52', fontWeight: 700, marginRight: 8 }}>{e.event_time}</span> : null}{e.title}{e.category && <span style={{ fontSize: 9, color: catColor(e.category), textTransform: 'uppercase', letterSpacing: 1, marginLeft: 8, fontWeight: 700 }}>{e.category}</span>}</div>
-                    {e.note && <div style={{ fontSize: 11, color: '#667', marginTop: 2 }}>{e.note}</div>}
-                  </div>
-                  <button onClick={() => deleteEvent(e)} style={{ ...iconBtn, color: '#a55' }}>✕</button>
-                </div>
-              ))}
-              {futureTasks.map(t => (
-                <div key={'ut'+t.id} style={{ background: '#FAF8F2', border: '1px solid #d4d9e0', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#2e7d4f', minWidth: 90 }}>{fmt(t.due_date as string)}</div>
-                  <div style={{ flex: 1 }}><span style={{ fontSize: 11, color: '#2e7d4f', fontWeight: 700, marginRight: 8 }}>TASK</span>{t.title}</div>
-                </div>
-              ))}
-            </div>
-          )
-        })()}
       </div>
     )
   }
